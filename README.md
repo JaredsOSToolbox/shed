@@ -1,5 +1,5 @@
-# Shedinja
+# shed
 
-Simple *NIX shell for CS 351
+A light weight UNIX shell written in C
 
 ![Logo](assets/logo.png)
