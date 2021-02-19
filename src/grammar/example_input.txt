@@ -1,0 +1,4 @@
+shed --version
+
+cat example > destination.txt
+echo "Hello" | sed 's/Hello/World/g'
