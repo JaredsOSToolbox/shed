@@ -4,31 +4,21 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 
-#define MAX_LINE 80
+#include "includes/history.h"
+
 
 const char* INSTITUTION = "California State University Fullerton";
 const char* AUTHOR = "Jared Dyreson";
+const float VERSION = 1.0;
 
 void version(void){
   printf(
-    "Shed Prompt (%s) 1.0\n"
+    "Shed Prompt (%s) %f\n"
     "Copyright (C) 2021 Comrade Software Foundation, Inc.\n"
     "MIT License\n"
     "This is free software, and provided as is without warranty\n"
     "Written by %s\n",
-  INSTITUTION, AUTHOR); 
-}
-
-char* strip(char* string, char delimiter) {
-    char* stripped = (char*)malloc(sizeof(char*));
-    int j = 0;
-    for(size_t i = 0; i < strlen(string); ++i){
-        if(string[i] != delimiter){
-            stripped[j++] = string[i];
-        }
-    }
-    stripped[++j] = '\0';
-    return stripped;
+  VERSION, INSTITUTION, AUTHOR); 
 }
 
 void spawn(char* command){
@@ -36,7 +26,7 @@ void spawn(char* command){
 
     if(command[0] == '\n'){ return; }
     if(strlen(command) > MAX_LINE){
-        fprintf(stderr, "oh fuck it's too big daddy!\n");
+        fprintf(stderr, "command too big\n");
         return;
     }
 
@@ -47,12 +37,10 @@ void spawn(char* command){
 
     while((tok = strtok(tok, " ")) != NULL){
         args[i++] = tok;
-        // printf("%s\n", tok);
         tok = NULL;
     }
     --i;
     
-    /*--i;*/
     args[i] = strip(args[i], '\n');
 
     pid_t pid = fork();
@@ -66,10 +54,8 @@ void spawn(char* command){
             fprintf(stderr, "process cowardly refused to terminate\n");
             exit(1);
         }
-    }
-    else{
+    } else{
         wait(NULL);
-        // printf("Child pid=%d done hath completed\n", pid);
     }
 
     free(args[i]);
@@ -83,21 +69,44 @@ int main(void) {
     ssize_t read;
     int line_number_ = 0;
 
-    /*
-     * spawing children all over the place, like a salmon
-     * ^ this might be kind of graphic Jared...
-    */
+    char** shed_history = malloc(HISTORY_SIZ * sizeof(char*));
+    for(int i = 0; i < HISTORY_SIZ; ++i){
+        shed_history[i] = malloc((MAX_LINE + 1) * sizeof(char));
+    }
+    int h = 0;
 
     while(running){
         printf("shed > ");
         fflush(stdout);
-        while ((read = getline(&line, &len, stdin)) != EOF) {
-            spawn(line);
+        while ((read = getline(&line, &len, stdin)) != EOF && (h < HISTORY_SIZ)) {
+            if(strcmp(line, "!!\n") == 0){
+                if(h == 0){
+                    fprintf(stderr, "no commands in shed history\n");
+                } else {
+                    fflush(stdout);
+                    // printf("[INFO] We are using the previous command of %s\n", shed_history[h-1]);
+                    int prev = h-1;
+                    // strncpy(shed_history[h++], shed_history[prev], strlen(shed_history[prev]));
+                    spawn(shed_history[prev]);
+                }
+            } else {
+                if(line[0] != '\n'){
+                    printf("adding %s", line);
+                    strncpy(shed_history[h++], line, strlen(line)-1);
+                    spawn(line);
+                }
+            }
             printf("shed > ");
         }
         running = 0;
     }
+    printf("\n");
+    printf("[INFO] Dumping shed history\n");
 
-    free(line);
+    for(int i = 0; i < HISTORY_SIZ; ++i){
+        printf("[%d] %s\n", i, shed_history[i]);
+        free(shed_history[i]);
+    }
+    free(shed_history);
     return 0;
 }
