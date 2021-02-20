@@ -1,5 +1,6 @@
 #pragma once
 #include <stdlib.h>
+#include <stdbool.h>
 
 #define MAX_LINE 80
 #define HISTORY_SIZ 10
@@ -20,4 +21,7 @@ void history_destructor(struct history*);
 
 void history_print(struct history*);
 void history_insert(struct history*, char*);
-void history_previous(struct history*);
+void history_resize(struct history*);
+
+char* history_previous(struct history*);
+bool history_isempty(struct history*);

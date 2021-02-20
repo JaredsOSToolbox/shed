@@ -5,6 +5,8 @@
 #include <sys/wait.h>
 
 #include "includes/history.h"
+#include "includes/strings.h"
+#include "includes/command_t.h"
 
 
 const char* INSTITUTION = "California State University Fullerton";
@@ -18,45 +20,42 @@ void version(void){
     "MIT License\n"
     "This is free software, and provided as is without warranty\n"
     "Written by %s\n",
-  VERSION, INSTITUTION, AUTHOR); 
+  INSTITUTION, VERSION, AUTHOR); 
 }
 
 int main(void) {
     int running = 1;
 
-    char * line = NULL;
-    size_t len = 0;
-    ssize_t read;
-    int line_number_ = 0;
-
     struct history* history = history_constructor();
-    for(int i = 0; i < 100; i++){
-        history_insert(history, "echo hello");
-    }
-    /*history_insert(history, "ls --version");*/
 
-    /*while(running){*/
-        /*printf("shed > ");*/
-        /*fflush(stdout);*/
-        /*while ((read = getline(&line, &len, stdin)) != EOF && (h < HISTORY_SIZ)) {*/
-            /*if(strcmp(line, "!!\n") == 0){*/
-                /*if(h == 0){*/
-                    /*fprintf(stderr, "no commands in shed history\n");*/
-                /*} else {*/
-                    /*fflush(stdout);*/
-                /*}*/
-            /*} else {*/
-                /*if(line[0] != '\n'){*/
-                    /*printf("adding %s", line);*/
-                /*}*/
-            /*}*/
-            /*printf("shed > ");*/
-        /*}*/
+    while(running){
+        printf("shed > ");
+        fflush(stdout);
+        char* line =  get_line();
+        if(line == NULL){ continue; }
+
+        if(strcmp(line, "!!") == 0){
+            // find prev command
+            if(history_isempty(history)) {
+                fprintf(stderr, "could not find previous command; history empty\n");
+                continue;
+            } else{
+                line = history_previous(history);
+                printf("previous %s\n", line);
+            }
+        } else {
+            history_insert(history, line);
+        }
+        if(strcmp(line, "q") == 0) { break; }
+        printf("using %s as the command\n", line);
+        struct command_t* command = command_t_constructor(line);
+        command_t_invoke(command);
+        command_t_destructor(command);
         /*running = 0;*/
-    /*}*/
+    }
 
     printf("\n");
-    /*history_print(history);*/
+    history_print(history);
     history_destructor(history);
     return 0;
 }
