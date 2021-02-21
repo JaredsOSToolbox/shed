@@ -49,6 +49,7 @@ int main(int argc, char **argv){
               in = open(full_command[i+1], O_RDONLY);
               if(in == EOF){
                   fprintf(stderr, "could not open %s for reading, cowardly refusing\n", full_command[i+1]);
+                  exit(1);
               }
               stop_parsing = 1;
               // signal end of processing command_t and store it for future execution
@@ -74,51 +75,15 @@ int main(int argc, char **argv){
   if(in){
       dup2(in, 0);
       close(in);
-  } else if(out){
+  } if(out){
       dup2(out, 1);
       close(out);
   }
 
   for(int k = 0; k < j; ++k){
-      printf("[%d] %s\n", k, something[k]);
+      // printf("[%d] %s\n", k, something[k]);
   }
   something[++j] = NULL;
-
-  /*char* string = ">";*/
-  /*if(strcmp(string, ">") == 0){*/
-      /*char* path = "out";*/
-      /*out = open(path, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);*/
-  /*} else if(strlen(string) == 0){*/
-      /*out = EOF;*/
-  /*} else if(strcmp(string, "<") == 0){*/
-      /*char* path = "in";*/
-      /*in = open(path, O_RDONLY);*/
-  /*}*/
-
-  /*if(out != EOF){*/
-      /*dup2(out, 1);*/
-  /*}*/
-  /*dup2(in, 0);*/
-
-  // open input and output files
-
-  /*in = open("scores", O_RDONLY);*/
-  /*out = open(stdout, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);*/
-
-  // replace standard input with input file
-
-  /*dup2(in, 0);*/
-
-  // replace standard output with output file
-
-  /*dup2(out, 1);*/
-
-  // close unused file descriptors
-
-  /*close(in);*/
-  /*close(out);*/
-
-  // execute grep
 
   execvp(something[0], something);
 }
