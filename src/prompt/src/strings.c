@@ -29,8 +29,11 @@ char* get_line() {
     }
     if(strlen(line) == 0){
         // EOF
-        free(line);
+        free(retline);
+        // pass in garbage bin struct that has pointers to all allocated blocks
+        // of memory and automatically free them in this chunk here?
         exit(0);
+        /*return NULL;*/
     }
 
     strcpy(retline, line);

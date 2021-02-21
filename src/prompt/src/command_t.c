@@ -21,7 +21,6 @@ struct command_t* command_t_constructor(char* line) {
     while((token != NULL)  && ((i - 1) < MAX_WORDS)) {
         if(i == 0){
             strncpy(command_path, token, strlen(token));
-            printf("command path yields: %s\n", command_path);
         } 
         command_args[i] = malloc((MAX_COMMAND_NAME_SIZ + 1) * sizeof(char));
         strncpy(command_args[i], token, strlen(token));
@@ -71,28 +70,6 @@ void command_t_invoke(struct command_t* command) {
     }
 
 }
-
-/*void command_t_invoke(struct command_t* command) {*/
-    /*pid_t pid = fork();*/
-    /*int wstatus;*/
-    /*if(pid < 0){*/
-        /*fprintf(stderr, "fork failed, use a spoon\n");*/
-        /*return;*/
-    /*}*/
-    /*else if(pid == 0){*/
-        /*int status = execvp(command->command_path, command->arguments);*/
-        /*if(status == -1) {*/
-            /*fprintf(stderr, "process cowardly refused to terminate\n");*/
-            /*exit(1);*/
-        /*}*/
-    /*} else {*/
-        /*printf("waiting for pid to fininsh\n");*/
-        /*if(waitpid(pid, &wstatus, WUNTRACED | WCONTINUED) == EOF){*/
-            /*printf("waitpid err\n");*/
-            /*exit(1);*/
-        /*}*/
-    /*}*/
-/*}*/
 
 void command_t_print(struct command_t* command) {
     printf("command_path: %s\n", command->command_path);

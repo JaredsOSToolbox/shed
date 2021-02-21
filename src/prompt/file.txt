@@ -1,0 +1,12 @@
+command_t.o
+file.txt
+history.o
+includes
+main.c
+Makefile
+shed
+shed.c
+src
+strings.o
+u
+using_dup.c
