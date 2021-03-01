@@ -3,7 +3,7 @@ COMPILER = clang
 CFLAGS = -Wall
 OUTPUT = shed
 
-all: $(OBJS) 
+all: $(OBJS) shed.c
 	$(COMPILER) $(CFLAGS) shed.c $(OBJS) -o $(OUTPUT)
 
 command_t.o: src/command_t.c includes/command_t.h
@@ -15,6 +15,11 @@ history.o: src/history.c includes/history.h
 strings.o: src/strings.c includes/strings.h
 	$(COMPILER) $(CFLAGS) -c src/strings.c
 
+test: all
+	#echo -e "echo --version\n" | ./shed
+	echo -e "uname -a | grep -o Linux" | ./shed -
+	#echo -e "echo hello | sed" | ./shed -
+	#echo -e "echo hello | sed &" | ./shed -
 run: all
 	./$(OUTPUT)
 

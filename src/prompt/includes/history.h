@@ -1,10 +1,9 @@
 #pragma once
-#include <stdlib.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #define MAX_LINE 80
 #define HISTORY_SIZ 10
-
 
 struct history {
   int length;
@@ -12,7 +11,7 @@ struct history {
   char** content;
 };
 
-//typedef struct history history;
+// typedef struct history history;
 
 struct history* history_constructor(void);
 
