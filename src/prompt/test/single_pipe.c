@@ -1,10 +1,12 @@
+#include <stdio.h>
+
 int main(int argc, char **argv)
 {
   int pipefd[2];
   int pid;
 
-  char *cat_args[] = {"cat", "scores", NULL};
-  char *grep_args[] = {"grep", "Villanova", NULL};
+  char *cat_args[] = {"uname", "-a", NULL};
+  char *grep_args[] = {"grep", "-o", "Linux", NULL};
 
   // make a pipe (fds go in pipefd[0] and pipefd[1])
 
@@ -42,6 +44,6 @@ int main(int argc, char **argv)
 
       // execute cat
 
-      execvp("cat", cat_args);
+      execvp("uname", cat_args);
     }
 }

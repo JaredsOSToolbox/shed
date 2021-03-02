@@ -123,7 +123,7 @@ void command_t_set_output_stream(struct command_t* command, char* path) {
     close(out);
 }
 
-void command_t_set_pipe_stream(struct command_t* input, struct command_t* output) {
+int command_t_set_pipe_stream(struct command_t* input, struct command_t* output) {
     int pipefds[2];
     int pid;
 
@@ -139,4 +139,5 @@ void command_t_set_pipe_stream(struct command_t* input, struct command_t* output
         close(pipefds[0]);
         execvp(output->command_path, output->arguments);
     }
+    return 0;
 }

@@ -32,24 +32,10 @@ int main(int argc, const char* argv[]) {
         (struct command_t**)malloc(MAX_FILTH * sizeof(struct command_t*));
     int garbage_position = 0;
     int is_stdin = 0;
+
     if (argc > 1 && strcmp(argv[1], "-") == 0) {
         is_stdin = 1;
     }
-
-    /*for(int i = 0; i < 2; ++i){*/
-
-    /*char* line =  get_line();*/
-    /*printf("got %s\n", line);*/
-    /*history_insert(history, line);*/
-    /*struct command_t* command = command_t_constructor(line);*/
-    /*command_t_print(command);*/
-    /*command_t_invoke(command);*/
-
-    /*garbage[j++] = command;*/
-
-    /*command_t_destructor(command);*/
-    /*free(line);*/
-    /*}*/
 
     while (running && garbage_position < MAX_FILTH) {
         printf("shed > ");
@@ -82,16 +68,16 @@ int main(int argc, const char* argv[]) {
         char* copy = strdup(line);
         struct command_t** commands = parse_line(copy);
         int z = 0;
-        while(commands[z] != NULL && garbage_position < MAX_FILTH){
-            if(commands[z]->pipe_stream){
+        while (commands[z] != NULL && garbage_position < MAX_FILTH) {
+            if (commands[z]->pipe_stream && (z + 1 < COM_SIZ)) {
                 garbage[garbage_position++] = commands[z];
-                garbage[garbage_position++] = commands[z+1];
+                garbage[garbage_position++] = commands[z + 1];
                 printf("[INFO] Ouput command\n");
                 command_t_print(commands[z]);
                 printf("[INFO] Input command\n");
-                command_t_print(commands[z+1]);
-                command_t_set_pipe_stream(commands[z], commands[z+1]);
-                z+=2;
+                command_t_print(commands[z + 1]);
+                command_t_set_pipe_stream(commands[z + 1], commands[z]);
+                z += 2;
             } else {
                 command_t_invoke(commands[z]);
                 garbage[garbage_position++] = commands[z++];
@@ -112,7 +98,7 @@ int main(int argc, const char* argv[]) {
     free(garbage);
 
     printf("\n");
-    history_print(history);
+    // history_print(history);
     history_destructor(history);
     return 0;
 }
