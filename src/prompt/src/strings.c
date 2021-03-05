@@ -122,7 +122,7 @@ struct command_t** parse_line(char* input) {
         struct command_t* comm = command_t_constructor(strings[n]);
         container[j++] = comm;
     }
-    printf("current number of commands: %d\n", j);
+    /*printf("current number of commands: %d\n", j);*/
 
     // remove any extra strings previously allocated
 

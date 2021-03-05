@@ -70,20 +70,25 @@ int main(int argc, const char* argv[]) {
         int z = 0;
         int behind = -1;
         while (commands[z] != NULL && garbage_position < MAX_FILTH) {
-            if (commands[z]->pipe_stream && (z + 1 < COM_SIZ)) {
+            if (commands[z]->pipe_stream == 1 && (z + 1 < COM_SIZ)) {
+                // input | output
+                // uname -a | grep Linux | wc -l
+                // ^ expect "2"
                 garbage[garbage_position++] = commands[z];
-                garbage[garbage_position++] = commands[z + 1];
+                /*garbage[garbage_position++] = commands[z + 1];*/
                 if((z > 0) && (commands[z-1]->pipe_stream != -1)) {
                     printf("hey the last command was involved in a pipe dream!\n");
                 }
-                printf("[INFO] Ouput command\n");
-                command_t_print(commands[z]);
-                printf("[INFO] Input command\n");
-                command_t_print(commands[z + 1]);
+                /*printf("[INFO] Ouput command\n");*/
+                /*command_t_print(commands[z]);*/
+                /*printf("[INFO] Input command\n");*/
+                /*command_t_print(commands[z + 1]);*/
                 /*command_t_set_pipe_stream(commands[z + 1], commands[z]);*/
-                command_t_set_pipe_stream(commands[z], commands[z + 1]);
-                z += 2;
+                 command_t_set_pipe_stream(commands[z]);
+                 ++z;
+                /*z += 2;*/
             } else {
+                // command : echo "hello"
                 command_t_invoke(commands[z]);
                 garbage[garbage_position++] = commands[z++];
             }

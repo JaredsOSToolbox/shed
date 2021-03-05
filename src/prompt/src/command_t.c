@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 struct command_t* command_t_constructor(char* line) {
     struct command_t* command =
@@ -35,6 +36,10 @@ struct command_t* command_t_constructor(char* line) {
     /*command->command_path = strdup(command_args[0]);*/
     command->arguments = command_args;
     command->argc = i;
+
+    command->current_pipe_pid = -1;
+    command->previous_pipe_pid = -1;
+    command->has_next_instruction = false;
 
     command->input_stream = 0;        // <
     command->output_stream = 0;       // >
@@ -124,22 +129,32 @@ void command_t_set_output_stream(struct command_t* command, char* path) {
     close(out);
 }
 
-void command_t_set_pipe_stream(struct command_t* input, struct command_t* output) {
+/*void command_t_set_pipe_stream(struct command_t* input, struct command_t* output) {*/
+void command_t_set_pipe_stream(struct command_t* input) {
     int pipefds[2];
     int pid;
+    int fd_in = (input->previous_pipe_pid >= 0) ? input->previous_pipe_pid : 0;
+    printf("current fd_in is %d\n", fd_in);
 
     pipe(pipefds);
     pid = fork();
+    if (pid == -1) {
+      exit(EXIT_FAILURE);
+    }
 
-    if(pid == 0){
-        dup2(pipefds[1], 1);
+    if(pid == 0) {
+        dup2(fd_in, 0);
+        if(input->has_next_instruction){
+          dup2(pipefds[1], 1);
+        }
         close(pipefds[0]);
         execvp(input->command_path, input->arguments);
+        exit(EXIT_FAILURE);
     } else {
-        dup2(pipefds[0], 0);
+        printf("waiting patiently\n");
+        wait(NULL);
         close(pipefds[1]);
-        execvp(output->command_path, output->arguments);
+        input->previous_pipe_pid = pipefds[0];
+        printf("%d\n", input->previous_pipe_pid);
     }
-    printf("needing to set pipe stream to this pid: %d\n", pipefds[0]);
-    output->pipe_stream = pipefds[0];
 }
