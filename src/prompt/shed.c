@@ -24,6 +24,37 @@ void version(void) {
         INSTITUTION, VERSION, AUTHOR);
 }
 
+void test(struct command_t** container) {
+    int fd[2];
+    pid_t pid;
+    int fdd = 0;
+    int z = 0;
+
+    while(container[z] != NULL) {
+        pipe(fd);
+        if((pid = fork()) == -1){
+            perror("fork");
+            exit(1);
+        } else if(pid == 0){
+            dup2(fdd, 0);
+            /*if(*(container + 1) != NULL){*/
+                /*dup2(fd[1], 1);*/
+            /*}*/
+            if(container[z+1] != NULL){
+                dup2(fd[1], 1);
+            }
+            close(fd[0]);
+            execvp(container[z]->command_path, container[z]->arguments);
+            exit(1);
+        }
+        else {
+            wait(NULL);
+            close(fd[1]);
+            fdd = fd[0];
+        }
+        ++z;
+    }
+}
 int main(int argc, const char* argv[]) {
     int running = 1;
 
@@ -67,32 +98,31 @@ int main(int argc, const char* argv[]) {
         }
         char* copy = strdup(line);
         struct command_t** commands = parse_line(copy);
-        int z = 0;
-        int behind = -1;
-        while (commands[z] != NULL && garbage_position < MAX_FILTH) {
-            if (commands[z]->pipe_stream == 1 && (z + 1 < COM_SIZ)) {
-                // input | output
-                // uname -a | grep Linux | wc -l
-                // ^ expect "2"
-                garbage[garbage_position++] = commands[z];
-                /*garbage[garbage_position++] = commands[z + 1];*/
-                if((z > 0) && (commands[z-1]->pipe_stream != -1)) {
-                    printf("hey the last command was involved in a pipe dream!\n");
-                }
-                /*printf("[INFO] Ouput command\n");*/
+        test(commands);
+        /*while (commands[z] != NULL && garbage_position < MAX_FILTH) {*/
+            /*if (commands[z]->pipe_stream == 1 && (z + 1 < COM_SIZ)) {*/
+                /*// input | output*/
+                /*// uname -a | grep Linux | wc -l*/
+                /*// ^ expect "2"*/
+                
+                /*// place garbage on heap*/
+                /*garbage[garbage_position] = commands[z];*/
                 /*command_t_print(commands[z]);*/
-                /*printf("[INFO] Input command\n");*/
-                /*command_t_print(commands[z + 1]);*/
-                /*command_t_set_pipe_stream(commands[z + 1], commands[z]);*/
-                 command_t_set_pipe_stream(commands[z]);
-                 ++z;
-                /*z += 2;*/
-            } else {
-                // command : echo "hello"
-                command_t_invoke(commands[z]);
-                garbage[garbage_position++] = commands[z++];
-            }
-        }
+                /*if ((z > 0)) {*/
+                    /*printf("here!\n");*/
+                    /*commands[z]->has_next_instruction = true;*/
+                /*}*/
+                /*command_t_set_pipe_stream(commands[z], fd_previous);*/
+            /*} else {*/
+                /*// command : echo "hello"*/
+                /*printf("here invoking this command\n\n");*/
+                /*command_t_print(commands[z]);*/
+                /*command_t_invoke(commands[z]);*/
+                /*garbage[garbage_position] = commands[z];*/
+            /*}*/
+            /*++garbage_position;*/
+            /*++z;*/
+        /*}*/
     }
 
     /*
@@ -112,3 +142,4 @@ int main(int argc, const char* argv[]) {
     history_destructor(history);
     return 0;
 }
+

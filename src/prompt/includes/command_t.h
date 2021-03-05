@@ -32,4 +32,4 @@ void command_t_print(struct command_t*);
 void command_t_set_output_stream(struct command_t*, char*);
 void command_t_set_input_stream(struct command_t*, char*);
 void command_t_set_background_process(struct command_t*); // cat prog.c &
-void command_t_set_pipe_stream(struct command_t*);
+void command_t_set_pipe_stream(struct command_t*, pid_t*);

@@ -130,11 +130,12 @@ void command_t_set_output_stream(struct command_t* command, char* path) {
 }
 
 /*void command_t_set_pipe_stream(struct command_t* input, struct command_t* output) {*/
-void command_t_set_pipe_stream(struct command_t* input) {
+void command_t_set_pipe_stream(struct command_t* input, pid_t* previous) {
     int pipefds[2];
     int pid;
-    int fd_in = (input->previous_pipe_pid >= 0) ? input->previous_pipe_pid : 0;
-    printf("current fd_in is %d\n", fd_in);
+    printf("value of pid_t previous: %d\n", *previous);
+    printf("attempting to invoke: %s\n", input->command_path);
+    /*int fd_in = (input->previous_pipe_pid != -1) ? input->previous_pipe_pid : 0;*/
 
     pipe(pipefds);
     pid = fork();
@@ -143,18 +144,16 @@ void command_t_set_pipe_stream(struct command_t* input) {
     }
 
     if(pid == 0) {
-        dup2(fd_in, 0);
-        if(input->has_next_instruction){
-          dup2(pipefds[1], 1);
-        }
+        printf("child succcessfully deployed!\n");
+        dup2(*previous, 0);
+        dup2(pipefds[1], 1);
+
         close(pipefds[0]);
         execvp(input->command_path, input->arguments);
         exit(EXIT_FAILURE);
     } else {
-        printf("waiting patiently\n");
         wait(NULL);
         close(pipefds[1]);
-        input->previous_pipe_pid = pipefds[0];
-        printf("%d\n", input->previous_pipe_pid);
+        *previous = pipefds[0];
     }
 }

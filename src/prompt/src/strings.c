@@ -75,9 +75,10 @@ struct command_t** parse_line(char* input) {
      * i : indexing position of string that is being copied
      * j : position of command_t in command_t** buffer
      * n : nth string allocated, not exceeding MAX_STR_COUNT
+     * l : flag for pipe. if set and we exit loop, you need to set the pipe_stream of the last command
     */
 
-    int i = 0, j = 0, n = 0;
+    int i = 0, j = 0, n = 0, l = 0;
 
     while (*input != '\0' && j <= COM_SIZ && n <= MAX_STR_COUNT) {
         for (size_t k = 0; k < delim_size; ++k) {
@@ -90,23 +91,28 @@ struct command_t** parse_line(char* input) {
                         // signal to current command that it needs to look in
                         // the command_t* buffer as a look ahead here you could
                         // set the output stream?
+                        l = 1;
                         command->pipe_stream = 1;
-                         printf("pipe used\n");
+                         /*printf("pipe used\n");*/
                         break;
                     case '>':
+                        l = 0;
                         command->output_stream = 1;
-                        printf("output redirection used\n");
+                        /*printf("output redirection used\n");*/
                         break;
                     case '<':
+                        l = 0;
                         command->input_stream = 1;
-                        printf("input redirection used\n");
+                        /*printf("input redirection used\n");*/
                         break;
                     case '&':
+                        l = 0;
                         command->background_process = 1;
-                        printf("background process invoked\n");
+                        /*printf("background process invoked\n");*/
                         break;
                 }
                 container[j++] = command;
+                //
                 while ((isspace(*input) || *input == delimit[k]) && (*input != '\0')) {
                     // advance string pointer further to trim off excess delimiters and whitespace
                     input++;
@@ -115,23 +121,32 @@ struct command_t** parse_line(char* input) {
         }
         strings[n][i++] = *input++;
     }
+    /*
+     * Two cases we can have here:
+     * 1) We have a dangling pipe and needs to be given to the current command
+     * 2) Only one command was given and needs to be ran
+    */
+
+    strings[n][++i] = '\0';
+    struct command_t* comm = command_t_constructor(strings[n]);
+
+    if(*input == '\0' && l == 1){
+        comm->pipe_stream = true;
+    }
+
 
     // no matches to the above delimiters, just regular command
-    if(n == 0 || i > 0){
-        strings[n][++i] = '\0';
-        struct command_t* comm = command_t_constructor(strings[n]);
-        container[j++] = comm;
-    }
-    /*printf("current number of commands: %d\n", j);*/
-
-    // remove any extra strings previously allocated
-
-    /*for(int x = n+2; x < MAX_STR_COUNT; ++x){*/
-        /*free(strings[x]);*/
-    /*} */
-    /*for (int y = j+1; y < COM_SIZ; ++y){*/
-        /*free(container[y]);*/
+    container[j++] = comm;
+    /*if (n == 0 || i > 0) {*/
     /*}*/
+
+    /*if(container[j-2]->pipe_stream == 1){*/
+        /*printf("hey the last command had a parting pipe, use it!\n");*/
+        /*command_t_print(container[j]);*/
+        /*container[j]->pipe_stream = 1;*/
+    /*}*/
+
+    /*container[j] = NULL;*/
     container[j+1] = NULL;
     return container;
 }
