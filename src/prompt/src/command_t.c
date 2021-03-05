@@ -38,7 +38,7 @@ struct command_t* command_t_constructor(char* line) {
 
     command->input_stream = 0;        // <
     command->output_stream = 0;       // >
-    command->pipe_stream = 0;         // |
+    command->pipe_stream = -1;        // |
     command->background_process = 0;  // &
 
     return command;
@@ -95,6 +95,7 @@ void command_t_print(struct command_t* command) {
     for (int i = 0; i < command->argc; ++i) {
         printf("\t[%d]: %s\n", i, command->arguments[i]);
     }
+    printf("pipe fd %d\n", command->pipe_stream);
 }
 
 void command_t_set_input_stream(struct command_t* command, char* path) {
@@ -123,7 +124,7 @@ void command_t_set_output_stream(struct command_t* command, char* path) {
     close(out);
 }
 
-int command_t_set_pipe_stream(struct command_t* input, struct command_t* output) {
+void command_t_set_pipe_stream(struct command_t* input, struct command_t* output) {
     int pipefds[2];
     int pid;
 
@@ -131,13 +132,14 @@ int command_t_set_pipe_stream(struct command_t* input, struct command_t* output)
     pid = fork();
 
     if(pid == 0){
-        dup2(pipefds[0], 0);
-        close(pipefds[1]);
-        execvp(input->command_path, input->arguments);
-    } else {
         dup2(pipefds[1], 1);
         close(pipefds[0]);
+        execvp(input->command_path, input->arguments);
+    } else {
+        dup2(pipefds[0], 0);
+        close(pipefds[1]);
         execvp(output->command_path, output->arguments);
     }
-    return 0;
+    printf("needing to set pipe stream to this pid: %d\n", pipefds[0]);
+    output->pipe_stream = pipefds[0];
 }
