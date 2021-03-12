@@ -13,6 +13,7 @@ const char* AUTHOR = "Jared Dyreson";
 const float VERSION = 1.0;
 
 #define MAX_FILTH 100
+#define MAX_PIPELINE_LEN 10
 
 void version(void) {
     printf(
@@ -24,7 +25,7 @@ void version(void) {
         INSTITUTION, VERSION, AUTHOR);
 }
 
-void test(struct command_t** container) {
+void run_pipeline(struct command_t** container) {
     int fd[2];
     pid_t pid;
     int fdd = 0;
@@ -61,7 +62,13 @@ int main(int argc, const char* argv[]) {
     struct history* history = history_constructor();
     struct command_t** garbage =
         (struct command_t**)malloc(MAX_FILTH * sizeof(struct command_t*));
+
+    struct command_t** pipeline =
+        (struct command_t**)malloc(MAX_PIPELINE_LEN * sizeof(struct command_t*));
+
     int garbage_position = 0;
+    int pipe_line_position = 0;
+
     int is_stdin = 0;
 
     if (argc > 1 && strcmp(argv[1], "-") == 0) {
@@ -76,6 +83,7 @@ int main(int argc, const char* argv[]) {
         if (line == NULL) {
             continue;
         }
+
         if (is_stdin) {
             printf("\n");
         }
@@ -98,31 +106,28 @@ int main(int argc, const char* argv[]) {
         }
         char* copy = strdup(line);
         struct command_t** commands = parse_line(copy);
-        test(commands);
-        /*while (commands[z] != NULL && garbage_position < MAX_FILTH) {*/
-            /*if (commands[z]->pipe_stream == 1 && (z + 1 < COM_SIZ)) {*/
-                /*// input | output*/
-                /*// uname -a | grep Linux | wc -l*/
-                /*// ^ expect "2"*/
-                
-                /*// place garbage on heap*/
-                /*garbage[garbage_position] = commands[z];*/
-                /*command_t_print(commands[z]);*/
-                /*if ((z > 0)) {*/
-                    /*printf("here!\n");*/
-                    /*commands[z]->has_next_instruction = true;*/
-                /*}*/
-                /*command_t_set_pipe_stream(commands[z], fd_previous);*/
-            /*} else {*/
-                /*// command : echo "hello"*/
-                /*printf("here invoking this command\n\n");*/
-                /*command_t_print(commands[z]);*/
-                /*command_t_invoke(commands[z]);*/
-                /*garbage[garbage_position] = commands[z];*/
+        int z = 0;
+        while(commands[z] != NULL && garbage_position < MAX_FILTH && pipe_line_position < MAX_PIPELINE_LEN) {
+            if(commands[z]->pipe_stream && (z + 1 < COM_SIZ)) {
+                // add to pipeline for processing
+                garbage[garbage_position++] = commands[z];
+                pipeline[pipe_line_position++] = commands[z];
+            } 
+            /*if(commands[z]->change_output){*/
+                /*// set it*/
             /*}*/
-            /*++garbage_position;*/
-            /*++z;*/
-        /*}*/
+            else {
+                ++z;
+                break;
+            }
+            ++z;
+        }
+
+        if(pipe_line_position > 0){
+            printf("running pipelinem\n");
+            run_pipeline(pipeline);
+        }
+        /*if(commands[z] != NULL){}*/
     }
 
     /*
@@ -132,14 +137,15 @@ int main(int argc, const char* argv[]) {
      * why this works, i have no idea. I truly don't.
      */
 
-    for (int k = 0; k < garbage_position; ++k) {
-        command_t_destructor(garbage[k]);
-    }
+    /*for (int k = 0; k < garbage_position; ++k) {*/
+        /*command_t_destructor(garbage[k]);*/
+    /*}*/
+
     free(garbage);
 
     printf("\n");
-    // history_print(history);
     history_destructor(history);
+
     return 0;
 }
 
