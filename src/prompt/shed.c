@@ -113,13 +113,15 @@ int main(int argc, const char* argv[]) {
                 garbage[garbage_position++] = commands[z];
                 pipeline[pipe_line_position++] = commands[z];
             } 
-            /*if(commands[z]->change_output){*/
-                /*// set it*/
-            /*}*/
-            else {
-                ++z;
-                break;
+            if(commands[z]->output_stream){
+                // set it
+                printf("hey, we need to redirect output\n");
             }
+            /*else {*/
+                /*printf("here!\n");*/
+                /*++z;*/
+                /*break;*/
+            /*}*/
             ++z;
         }
 

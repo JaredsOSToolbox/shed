@@ -37,10 +37,6 @@ struct command_t* command_t_constructor(char* line) {
     command->arguments = command_args;
     command->argc = i;
 
-    command->current_pipe_pid = -1;
-    command->previous_pipe_pid = -1;
-    command->has_next_instruction = false;
-
     command->input_stream = 0;        // <
     command->output_stream = 0;       // >
     command->pipe_stream = -1;        // |
@@ -127,33 +123,4 @@ void command_t_set_output_stream(struct command_t* command, char* path) {
     command->output_stream = 1;
     dup2(out, 1);
     close(out);
-}
-
-/*void command_t_set_pipe_stream(struct command_t* input, struct command_t* output) {*/
-void command_t_set_pipe_stream(struct command_t* input, pid_t* previous) {
-    int pipefds[2];
-    int pid;
-    printf("value of pid_t previous: %d\n", *previous);
-    printf("attempting to invoke: %s\n", input->command_path);
-    /*int fd_in = (input->previous_pipe_pid != -1) ? input->previous_pipe_pid : 0;*/
-
-    pipe(pipefds);
-    pid = fork();
-    if (pid == -1) {
-      exit(EXIT_FAILURE);
-    }
-
-    if(pid == 0) {
-        printf("child succcessfully deployed!\n");
-        dup2(*previous, 0);
-        dup2(pipefds[1], 1);
-
-        close(pipefds[0]);
-        execvp(input->command_path, input->arguments);
-        exit(EXIT_FAILURE);
-    } else {
-        wait(NULL);
-        close(pipefds[1]);
-        *previous = pipefds[0];
-    }
 }

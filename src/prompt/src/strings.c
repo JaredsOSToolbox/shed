@@ -1,5 +1,6 @@
 #include "../includes/strings.h"
 #include "../includes/command_t.h"
+#include "../includes/flag_t.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -42,11 +43,6 @@ char* get_line() {
     return retline;
 }
 
-/*char** parse_input(char* line) {*/
-/*char* token;*/
-/*token = strtok(line,)*/
-/*}*/
-
 char* strip(char* string, char delimiter) {
     char* stripped = (char*)malloc(sizeof(char*));
     int j = 0;
@@ -63,6 +59,7 @@ struct command_t** parse_line(char* input) {
     struct command_t** container = malloc(COM_SIZ * sizeof(struct command_t*));
 
     char** strings = malloc(MAX_STR_COUNT * sizeof(char*));
+    struct flag_t* fl = flag_t_constructor();
 
     for (int p = 0; p < MAX_STR_COUNT; ++p) {
         strings[p] = (char*)malloc(BUFSIZ * sizeof(char));
@@ -76,9 +73,14 @@ struct command_t** parse_line(char* input) {
      * j : position of command_t in command_t** buffer
      * n : nth string allocated, not exceeding MAX_STR_COUNT
      * l : flag for pipe. if set and we exit loop, you need to set the pipe_stream of the last command
+     * o : flag for output redirection
+     * p : flag for input redirection
+     * b : flag for background process
     */
 
-    int i = 0, j = 0, n = 0, l = 0;
+    // I feel like I should have a matrix here for flags
+
+    int i = 0, j = 0, n = 0, l = 0, o = 0, p = 0, b = 0;
 
     while (*input != '\0' && j <= COM_SIZ && n <= MAX_STR_COUNT) {
         for (size_t k = 0; k < delim_size; ++k) {
@@ -91,22 +93,25 @@ struct command_t** parse_line(char* input) {
                         // signal to current command that it needs to look in
                         // the command_t* buffer as a look ahead here you could
                         // set the output stream?
-                        l = 1;
+                        flag_t_set_flag(fl, PIPE);
+                        /*l = 1; o = 0; p = 0;*/
                         command->pipe_stream = 1;
                          /*printf("pipe used\n");*/
                         break;
                     case '>':
-                        l = 0;
+                        flag_t_set_flag(fl, OUTPUT);
+                        /*l = 0; o = 1; p = 0;*/
                         command->output_stream = 1;
-                        /*printf("output redirection used\n");*/
                         break;
                     case '<':
-                        l = 0;
+                        /*l = 0; o = 0; p = 1;*/
+                        flag_t_set_flag(fl, INPUT);
                         command->input_stream = 1;
                         /*printf("input redirection used\n");*/
                         break;
                     case '&':
-                        l = 0;
+                        /*l = 0; o = 0; p = 0; b = 0;*/
+                        flag_t_set_flag(fl, BACKGROUND);
                         command->background_process = 1;
                         /*printf("background process invoked\n");*/
                         break;
@@ -134,20 +139,22 @@ struct command_t** parse_line(char* input) {
         comm->pipe_stream = true;
     }
 
+    if(*input == '\0' && (get_flag(fl, OUTPUT) || get_flag(fl, INPUT))){
+        if(strlen(strings[n]) == 0){
+            fprintf(stderr, "missing %s stream!\n", (o) ? "output" : "input");
+            comm->output_stream = 0;
+        } else {
+            printf("using %s as a %s stream path\n", strings[n], (o) ? "output" : "input");
+            comm->stream_path = strings[n];
+        }
+    }
 
     // no matches to the above delimiters, just regular command
     container[j++] = comm;
-    /*if (n == 0 || i > 0) {*/
-    /*}*/
 
-    /*if(container[j-2]->pipe_stream == 1){*/
-        /*printf("hey the last command had a parting pipe, use it!\n");*/
-        /*command_t_print(container[j]);*/
-        /*container[j]->pipe_stream = 1;*/
-    /*}*/
-
-    /*container[j] = NULL;*/
     container[j+1] = NULL;
+
+    flag_t_destructor(fl);
     return container;
 }
 
