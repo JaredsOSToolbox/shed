@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "includes/command_t.h"
+#include "includes/flag_t.h"
 #include "includes/history.h"
 #include "includes/strings.h"
 
@@ -66,10 +67,14 @@ int main(int argc, const char* argv[]) {
     struct command_t** pipeline =
         (struct command_t**)malloc(MAX_PIPELINE_LEN * sizeof(struct command_t*));
 
+    struct flag_t* fl = flag_t_constructor();
+
     int garbage_position = 0;
     int pipe_line_position = 0;
 
     int is_stdin = 0;
+
+    int stdout_old = 0;
 
     if (argc > 1 && strcmp(argv[1], "-") == 0) {
         is_stdin = 1;
@@ -96,7 +101,6 @@ int main(int argc, const char* argv[]) {
                 continue;
             } else {
                 line = history_previous(history);
-                printf("previous %s\n", line);
             }
         } else {
             history_insert(history, line);
@@ -108,15 +112,21 @@ int main(int argc, const char* argv[]) {
         struct command_t** commands = parse_line(copy);
         int z = 0;
         while(commands[z] != NULL && garbage_position < MAX_FILTH && pipe_line_position < MAX_PIPELINE_LEN) {
-            if(commands[z]->pipe_stream && (z + 1 < COM_SIZ)) {
+            if(commands[z]->pipe_stream == 1 && (z + 1 < COM_SIZ)) {
                 // add to pipeline for processing
+                command_t_print(commands[z]);
                 garbage[garbage_position++] = commands[z];
                 pipeline[pipe_line_position++] = commands[z];
             } 
-            if(commands[z]->output_stream){
-                // set it
-                printf("hey, we need to redirect output\n");
-            }
+            else if(commands[z]->output_stream){
+                stdout_old = dup(1);
+                command_t_set_output_stream(commands[z+1]->stream_path);
+                command_t_invoke(commands[z]);
+                flag_t_set_flag(fl, OUTPUT);
+            } 
+            else if(commands[z]->input_stream) {
+                flag_t_set_flag(fl, INPUT);
+            }             
             /*else {*/
                 /*printf("here!\n");*/
                 /*++z;*/
@@ -126,11 +136,14 @@ int main(int argc, const char* argv[]) {
         }
 
         if(pipe_line_position > 0){
-            printf("running pipelinem\n");
             run_pipeline(pipeline);
+        
         }
-        /*if(commands[z] != NULL){}*/
+        // reset output
+        // https://stackoverflow.com/questions/11042218/c-restore-stdout-to-terminal
+        restore_stdout(stdout_old);
     }
+   
 
     /*
      * for some reason, invoking the destructor in the while/for loop
@@ -139,9 +152,9 @@ int main(int argc, const char* argv[]) {
      * why this works, i have no idea. I truly don't.
      */
 
-    /*for (int k = 0; k < garbage_position; ++k) {*/
-        /*command_t_destructor(garbage[k]);*/
-    /*}*/
+    for (int k = 0; k < garbage_position; ++k) {
+        command_t_destructor(garbage[k]);
+    }
 
     free(garbage);
 

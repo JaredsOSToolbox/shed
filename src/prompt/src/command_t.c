@@ -17,6 +17,8 @@ struct command_t* command_t_constructor(char* line) {
 
     char** command_args = malloc((MAX_WORDS + 1) * sizeof(char*));
 
+    /*char* stream_path = (char*)malloc(BUFSIZ * sizeof(char));*/
+
     int i = 0;
 
     const char delimiter[2] = " ";
@@ -33,7 +35,6 @@ struct command_t* command_t_constructor(char* line) {
         ++i;
     }
 
-    /*command->command_path = strdup(command_args[0]);*/
     command->arguments = command_args;
     command->argc = i;
 
@@ -53,7 +54,6 @@ void command_t_destructor(struct command_t* command) {
     }
 
     free(command->arguments);
-    /*free(command);*/
 }
 
 pid_t spawnChild(char* program, char** arg_list, int background) {
@@ -112,15 +112,18 @@ void command_t_set_input_stream(struct command_t* command, char* path) {
     }
 }
 
-void command_t_set_output_stream(struct command_t* command, char* path) {
+void command_t_set_output_stream(char* path) {
     // this is considered stdout
     if (path == NULL) {
         printf("using stdout as file stream\n");
         return;
     }
-    int out = open(path, O_WRONLY | O_TRUNC | O_CREAT,
-                   S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
-    command->output_stream = 1;
-    dup2(out, 1);
-    close(out);
+    int fdout = open(path, O_WRONLY | O_CREAT, 0600);
+    dup2(fdout, STDOUT_FILENO);
+    close(fdout);
+}
+
+void restore_stdout(int stdout_fd){
+    dup2(stdout_fd, 1);
+    close(stdout_fd);
 }

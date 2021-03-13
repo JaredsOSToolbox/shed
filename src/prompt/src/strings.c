@@ -72,15 +72,9 @@ struct command_t** parse_line(char* input) {
      * i : indexing position of string that is being copied
      * j : position of command_t in command_t** buffer
      * n : nth string allocated, not exceeding MAX_STR_COUNT
-     * l : flag for pipe. if set and we exit loop, you need to set the pipe_stream of the last command
-     * o : flag for output redirection
-     * p : flag for input redirection
-     * b : flag for background process
     */
 
-    // I feel like I should have a matrix here for flags
-
-    int i = 0, j = 0, n = 0, l = 0, o = 0, p = 0, b = 0;
+    int i = 0, j = 0, n = 0;
 
     while (*input != '\0' && j <= COM_SIZ && n <= MAX_STR_COUNT) {
         for (size_t k = 0; k < delim_size; ++k) {
@@ -94,26 +88,19 @@ struct command_t** parse_line(char* input) {
                         // the command_t* buffer as a look ahead here you could
                         // set the output stream?
                         flag_t_set_flag(fl, PIPE);
-                        /*l = 1; o = 0; p = 0;*/
                         command->pipe_stream = 1;
-                         /*printf("pipe used\n");*/
                         break;
                     case '>':
                         flag_t_set_flag(fl, OUTPUT);
-                        /*l = 0; o = 1; p = 0;*/
                         command->output_stream = 1;
                         break;
                     case '<':
-                        /*l = 0; o = 0; p = 1;*/
                         flag_t_set_flag(fl, INPUT);
                         command->input_stream = 1;
-                        /*printf("input redirection used\n");*/
                         break;
                     case '&':
-                        /*l = 0; o = 0; p = 0; b = 0;*/
                         flag_t_set_flag(fl, BACKGROUND);
                         command->background_process = 1;
-                        /*printf("background process invoked\n");*/
                         break;
                 }
                 container[j++] = command;
@@ -135,17 +122,15 @@ struct command_t** parse_line(char* input) {
     strings[n][++i] = '\0';
     struct command_t* comm = command_t_constructor(strings[n]);
 
-    if(*input == '\0' && l == 1){
+    if(*input == '\0' && get_flag(fl, PIPE)){
         comm->pipe_stream = true;
     }
 
     if(*input == '\0' && (get_flag(fl, OUTPUT) || get_flag(fl, INPUT))){
         if(strlen(strings[n]) == 0){
-            fprintf(stderr, "missing %s stream!\n", (o) ? "output" : "input");
             comm->output_stream = 0;
         } else {
-            printf("using %s as a %s stream path\n", strings[n], (o) ? "output" : "input");
-            comm->stream_path = strings[n];
+            comm->stream_path = strdup(strings[n]);
         }
     }
 
