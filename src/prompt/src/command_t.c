@@ -68,7 +68,7 @@ pid_t spawnChild(char* program, char** arg_list, int background) {
         return ch_pid;
     } else {
         if (background) {
-            printf("sending pid %d into the background\n", ch_pid);
+            printf("[1] %d", ch_pid);
             if(setpgid(ch_pid, 0) != 0){
                 perror("setpgid() error");
             }
@@ -99,15 +99,14 @@ void command_t_print(struct command_t* command) {
     printf("pipe fd %d\n", command->pipe_stream);
 }
 
-void command_t_set_input_stream(struct command_t* command, char* path) {
+void command_t_set_input_stream(char* path) {
     int fd = open(path, O_RDONLY);
     if (fd == EOF) {
         fprintf(stderr,
-                "could not set %s as the input stream; file not found\n", path);
-        /*exit(EXIT_FAILURE);*/
+                "shed: no such file or directory: %s\n", path);
+        exit(EXIT_FAILURE);
     } else {
-        command->input_stream = 1;
-        dup2(fd, 0);
+        dup2(fd, STDIN_FILENO);
         close(fd);
     }
 }
@@ -118,7 +117,7 @@ void command_t_set_output_stream(char* path) {
         printf("using stdout as file stream\n");
         return;
     }
-    int fdout = open(path, O_WRONLY | O_CREAT, 0600);
+    int fdout = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0600);
     dup2(fdout, STDOUT_FILENO);
     close(fdout);
 }
@@ -126,4 +125,34 @@ void command_t_set_output_stream(char* path) {
 void restore_stdout(int stdout_fd){
     dup2(stdout_fd, 1);
     close(stdout_fd);
+}
+
+
+void run_pipeline(struct command_t** container) {
+    int fd[2];
+    pid_t pid;
+    int fdd = 0;
+    int z = 0;
+
+    while(container[z] != NULL) {
+        pipe(fd);
+        if((pid = fork()) == -1){
+            perror("fork");
+            exit(1);
+        } else if(pid == 0){
+            dup2(fdd, 0);
+            if(container[z+1] != NULL){
+                dup2(fd[1], 1);
+            }
+            close(fd[0]);
+            execvp(container[z]->command_path, container[z]->arguments);
+            exit(1);
+        }
+        else {
+            wait(NULL);
+            close(fd[1]);
+            fdd = fd[0];
+        }
+        ++z;
+    }
 }

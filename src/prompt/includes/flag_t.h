@@ -18,3 +18,5 @@ void flag_t_destructor(struct flag_t*);
 void flag_t_set_flag(struct flag_t*, int);
 
 bool get_flag(struct flag_t*, int);
+
+void clear_flags(struct flag_t*);

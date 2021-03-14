@@ -18,9 +18,13 @@ void flag_t_destructor(struct flag_t* flag){
 }
 
 void flag_t_set_flag(struct flag_t* flags, int flag_pos){
-    for(int i = 0; i < flags->size; ++i){
-        flags->container[i] = (flag_pos == i) ? true : false;
+    /*for(int i = 0; i < flags->size; ++i) {*/
+        /*flags->container[i] = (flag_pos == i) ? true : false;*/
+    /*}*/
+    if (flag_pos > flags->size) {
+        return;
     }
+    flags->container[flag_pos] = true;
 }
 
 void set_flag(bool *flags, int flag){
@@ -32,4 +36,10 @@ void set_flag(bool *flags, int flag){
 
 bool get_flag(struct flag_t *flags, int flag){
     return flags->container[flag];
+}
+
+void clear_flags(struct flag_t *flags){
+    for(int i = 0; i < flags->size; ++i){
+        flags->container[i] = false;
+    }
 }

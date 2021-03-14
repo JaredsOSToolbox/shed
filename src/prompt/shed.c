@@ -26,34 +26,6 @@ void version(void) {
         INSTITUTION, VERSION, AUTHOR);
 }
 
-void run_pipeline(struct command_t** container) {
-    int fd[2];
-    pid_t pid;
-    int fdd = 0;
-    int z = 0;
-
-    while(container[z] != NULL) {
-        pipe(fd);
-        if((pid = fork()) == -1){
-            perror("fork");
-            exit(1);
-        } else if(pid == 0){
-            dup2(fdd, 0);
-            if(container[z+1] != NULL){
-                dup2(fd[1], 1);
-            }
-            close(fd[0]);
-            execvp(container[z]->command_path, container[z]->arguments);
-            exit(1);
-        }
-        else {
-            wait(NULL);
-            close(fd[1]);
-            fdd = fd[0];
-        }
-        ++z;
-    }
-}
 int main(int argc, const char* argv[]) {
     int running = 1;
 
@@ -111,40 +83,50 @@ int main(int argc, const char* argv[]) {
         while(commands[z] != NULL && garbage_position < MAX_FILTH && pipe_line_position < MAX_PIPELINE_LEN) {
             if(commands[z]->pipe_stream == 1 && (z + 1 < COM_SIZ)) {
                 // add to pipeline for processing
-                /*command_t_print(commands[z]);*/
                 garbage[garbage_position++] = commands[z];
                 pipeline[pipe_line_position++] = commands[z];
             } 
-            else if(commands[z]->output_stream){
+            else if((commands[z]->output_stream || commands[z]->input_stream) && !get_flag(fl, BACKGROUND)){
                 stdout_old = dup(1);
-                command_t_set_output_stream(commands[z+1]->stream_path);
-                if(commands[z+2] == NULL && pipe_line_position > 0) {
+                char* name = commands[z+1]->stream_path;
+                if(commands[z]->output_stream){
+                    flag_t_set_flag(fl, OUTPUT);
+                    command_t_set_output_stream(name);
+                } else {
+                    flag_t_set_flag(fl, INPUT);
+                    command_t_set_input_stream(name);
+                }
+                
+                if(pipe_line_position > 0 && !get_flag(fl, INPUT)) {
                     pipeline[pipe_line_position++] = commands[z];
                     run_pipeline(pipeline);
-                    /*break;*/
+                    pipe_line_position = 0;
                 } else {
                     command_t_invoke(commands[z]);
                 }
-                flag_t_set_flag(fl, OUTPUT);
+
             } 
-            else if(commands[z]->input_stream) {
-                flag_t_set_flag(fl, INPUT);
-            }             
-            /*else {*/
-                /*printf("here!\n");*/
-                /*++z;*/
-                /*break;*/
-            /*}*/
+            else if(commands[z]->background_process){
+                flag_t_set_flag(fl, BACKGROUND);
+            }
             ++z;
         }
 
-        /*if(pipe_line_position > 0){*/
-            /*run_pipeline(pipeline);*/
-        
-        /*}*/
+        if(pipe_line_position > 0){
+            if(get_flag(fl, BACKGROUND)){
+                printf("needing to put this entire pipeline into the background\n");
+            }
+            run_pipeline(pipeline);
+        } else {
+            command_t_invoke(commands[0]);
+        }
+
         // reset output
         // https://stackoverflow.com/questions/11042218/c-restore-stdout-to-terminal
-        restore_stdout(stdout_old);
+        if(get_flag(fl, INPUT) || get_flag(fl, OUTPUT)){
+            restore_stdout(stdout_old);
+        }
+        clear_flags(fl);
     }
    
 

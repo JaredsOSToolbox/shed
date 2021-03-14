@@ -133,6 +133,9 @@ struct command_t** parse_line(char* input) {
             comm->stream_path = strdup(strings[n]);
         }
     }
+    if(*input == '\0' && get_flag(fl, BACKGROUND)){
+        comm->background_process = true;
+    }
 
     // no matches to the above delimiters, just regular command
     container[j++] = comm;
