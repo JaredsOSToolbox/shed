@@ -1,5 +1,6 @@
 #include "../includes/command_t.h"
 
+#include <signal.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -59,6 +60,7 @@ void command_t_destructor(struct command_t* command) {
 pid_t spawnChild(char* program, char** arg_list, int background) {
     // credit here : https://www.delftstack.com/howto/c/execvp-in-c/
     pid_t ch_pid = fork();
+    int status;
     if (ch_pid == -1) {
         perror("fork");
         exit(EXIT_FAILURE);
@@ -66,28 +68,28 @@ pid_t spawnChild(char* program, char** arg_list, int background) {
 
     if (ch_pid > 0) {
         return ch_pid;
-    } else {
-        if (background) {
-            printf("[1] %d", ch_pid);
-            if(setpgid(ch_pid, 0) != 0){
-                perror("setpgid() error");
-            }
-        }
+    } 
+    else if(ch_pid == 0) {
         execvp(program, arg_list);
         perror("execve");
         exit(EXIT_FAILURE);
-    }
+    } 
 }
 
-void command_t_invoke(struct command_t* command) {
-    pid_t child;
+void command_t_invoke(struct command_t* command, struct command_t* global_context) {
     int wstatus;
-    child = spawnChild(command->command_path, command->arguments,
+    pid_t child = spawnChild(command->command_path, command->arguments,
                        command->background_process);
-    if (waitpid(child, &wstatus, WUNTRACED | WCONTINUED) == -1) {
+    if(command->background_process){
+        global_context = command;
+    }
+    /*command_t_print(global_command);*/
+    if (waitpid(child, &wstatus, (command->background_process) ? WNOHANG : WUNTRACED | WCONTINUED) == -1) {
+    /*if (waitpid(child, &wstatus, WUNTRACED | WCONTINUED) == -1) {*/
         perror("waitpid");
         exit(EXIT_FAILURE);
     }
+    /*global_command = NULL;*/
 }
 
 void command_t_print(struct command_t* command) {
@@ -96,7 +98,6 @@ void command_t_print(struct command_t* command) {
     for (int i = 0; i < command->argc; ++i) {
         printf("\t[%d]: %s\n", i, command->arguments[i]);
     }
-    printf("pipe fd %d\n", command->pipe_stream);
 }
 
 void command_t_set_input_stream(char* path) {
@@ -114,7 +115,6 @@ void command_t_set_input_stream(char* path) {
 void command_t_set_output_stream(char* path) {
     // this is considered stdout
     if (path == NULL) {
-        printf("using stdout as file stream\n");
         return;
     }
     int fdout = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0600);
@@ -140,6 +140,8 @@ void run_pipeline(struct command_t** container) {
             perror("fork");
             exit(1);
         } else if(pid == 0){
+            /*if(container[z]->background_process)*/
+            /*setsid();*/
             dup2(fdd, 0);
             if(container[z+1] != NULL){
                 dup2(fd[1], 1);

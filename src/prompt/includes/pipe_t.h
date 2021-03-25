@@ -1,3 +1,4 @@
+#pragma once
 struct pipe_t {
   int* pipefds;  // pipe file descriptors
   int size;      // amount of file descriptors

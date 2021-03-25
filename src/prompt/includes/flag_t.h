@@ -1,3 +1,4 @@
+#pragma once
 #define PIPE 0
 #define OUTPUT 1
 #define INPUT 2

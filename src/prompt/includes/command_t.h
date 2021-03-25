@@ -1,7 +1,7 @@
+#pragma once
 #define MAX_WORDS 100
 #define MAX_COMMAND_NAME_SIZ 50
 
-#pragma once
 #include <stdbool.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -22,7 +22,7 @@ struct command_t {
 
 struct command_t* command_t_constructor(char*);
 void command_t_destructor(struct command_t*);
-void command_t_invoke(struct command_t*);
+void command_t_invoke(struct command_t*, struct command_t*);
 void command_t_print(struct command_t*);
 
 void command_t_set_output_stream(char*);

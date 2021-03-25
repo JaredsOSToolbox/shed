@@ -35,7 +35,8 @@ char* get_line() {
         free(retline);
         // pass in garbage bin struct that has pointers to all allocated blocks
         // of memory and automatically free them in this chunk here?
-        exit(0);
+        return "EOF";
+        /*exit(0);*/
         /*return NULL;*/
     }
 
@@ -44,6 +45,11 @@ char* get_line() {
 }
 
 char* strip(char* string, char delimiter) {
+    /*
+     * Essentially a Python equivalent of str.strip()
+     * It mangles the original string and returns a sanitized one
+    */
+
     char* stripped = (char*)malloc(sizeof(char*));
     int j = 0;
     for (size_t i = 0; i < strlen(string); ++i) {
@@ -72,6 +78,7 @@ struct command_t** parse_line(char* input) {
      * i : indexing position of string that is being copied
      * j : position of command_t in command_t** buffer
      * n : nth string allocated, not exceeding MAX_STR_COUNT
+     * t : counter to the number of chevrons (< | >) that occur
     */
 
     int i = 0, j = 0, n = 0;

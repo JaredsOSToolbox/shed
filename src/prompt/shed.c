@@ -3,6 +3,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "includes/command_t.h"
 #include "includes/flag_t.h"
@@ -16,6 +17,13 @@ const float VERSION = 1.0;
 #define MAX_FILTH 100
 #define MAX_PIPELINE_LEN 10
 
+/*
+ * Global pointer that can be accessed by the signal handler
+*/
+
+struct command_t* global_command;
+
+
 void version(void) {
     printf(
         "Shed Prompt (%s) %f\n"
@@ -24,6 +32,44 @@ void version(void) {
         "This is free software, and provided as is without warranty\n"
         "Written by %s\n",
         INSTITUTION, VERSION, AUTHOR);
+}
+
+
+/*void catch(int snum) {*/
+    /*pid_t pid;*/
+    /*int status;*/
+
+    /*pid = wait(&status);*/
+    /*printf("[1] + %d done %s\n", pid, (global_command == NULL) ? "(null)" : global_command->command_path);*/
+    /*signal(SIGCHLD, catch);*/
+/*}*/
+
+void harvester_of_sorrow(struct command_t** commands, int position,
+                         struct flag_t* flags, struct history* hist) {
+    /*
+     * Name this band, album and year and you get a free cookie :)
+     * Garbage collection that can happen dynamically in these two conditions:
+     * 1) End of loop
+     * 2) Ctrl-D is pressed, invoking immediate termination
+     */
+
+    for (int k = 0; k < position; ++k) {
+        /*
+         * Remove all commands allocated
+        */
+        command_t_destructor(commands[k]);
+    }
+    /*
+     * Free container pointer
+    */
+    free(commands);
+
+    /*
+     * Recursively release all strings created for history
+     * along with the history
+    */
+    history_destructor(hist);
+    printf("\n");
 }
 
 int main(int argc, const char* argv[]) {
@@ -38,6 +84,7 @@ int main(int argc, const char* argv[]) {
 
     struct flag_t* fl = flag_t_constructor();
 
+
     int garbage_position = 0;
     int pipe_line_position = 0;
 
@@ -49,18 +96,22 @@ int main(int argc, const char* argv[]) {
         is_stdin = 1;
     }
 
+    /*signal(SIGCHLD, catch);*/
     while (running && garbage_position < MAX_FILTH) {
         printf("shed > ");
         fflush(stdout);
         char* line =
             get_line();  // CTRL-D will result in massive memory leak. smile :)
-        if (line == NULL) {
+        if (strcmp(line, "EOF") == 0) {
+            harvester_of_sorrow(garbage, garbage_position, fl, history);
+            /*printf("we need to free this man!\n");*/
+            return 0;
             continue;
         }
 
-        if (is_stdin) {
-            printf("\n");
-        }
+        /*if (is_stdin) {*/
+            /*printf("\n");*/
+        /*}*/
 
         if (strcmp(line, "!!") == 0) {
             // find prev command
@@ -102,7 +153,7 @@ int main(int argc, const char* argv[]) {
                     run_pipeline(pipeline);
                     pipe_line_position = 0;
                 } else {
-                    command_t_invoke(commands[z]);
+                    command_t_invoke(commands[z], global_command);
                 }
 
             } 
@@ -118,7 +169,7 @@ int main(int argc, const char* argv[]) {
             }
             run_pipeline(pipeline);
         } else {
-            command_t_invoke(commands[0]);
+            command_t_invoke(commands[0], global_command);
         }
 
         // reset output
@@ -137,14 +188,9 @@ int main(int argc, const char* argv[]) {
      * why this works, i have no idea. I truly don't.
      */
 
-    for (int k = 0; k < garbage_position; ++k) {
-        command_t_destructor(garbage[k]);
-    }
 
-    free(garbage);
 
-    printf("\n");
-    history_destructor(history);
+    harvester_of_sorrow(garbage, garbage_position, fl, history);
 
     return 0;
 }
