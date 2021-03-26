@@ -36,6 +36,8 @@ void harvester_of_sorrow(struct command_t** commands, int position,
      * 2) Ctrl-D is pressed, invoking immediate termination
      */
 
+    flag_t_destructor(flags);
+
     for (int k = 0; k < position; ++k) {
         /*
          * Remove all commands allocated
@@ -115,15 +117,20 @@ int main(int argc, const char* argv[]) {
         char* copy = strdup(line);
         struct command_t** commands = parse_line(copy);
         int z = 0;
+        char* output;
+        char* input;
         while(commands[z] != NULL && garbage_position < MAX_FILTH && pipe_line_position < MAX_PIPELINE_LEN) {
+            command_t_print(commands[z]);
             if(commands[z]->pipe_stream == 1 && (z + 1 < COM_SIZ)) {
                 // add to pipeline for processing
                 garbage[garbage_position++] = commands[z];
                 pipeline[pipe_line_position++] = commands[z];
             } 
             else if((commands[z]->output_stream || commands[z]->input_stream) && !get_flag(fl, BACKGROUND)){
-                char* output = commands[z+1]->output_stream_path;
-                char* input = commands[z+1]->input_stream_path;
+                if(commands[z+1] != NULL){
+                    input = commands[z+1]->input_stream_path;
+                    output = commands[z+1]->output_stream_path;
+                }
 
                 stdout_old = dup(STDOUT_FILENO);
                 stdin_old = dup(STDIN_FILENO);
@@ -131,6 +138,7 @@ int main(int argc, const char* argv[]) {
                 if(commands[z]->output_stream && output != NULL){
                     flag_t_set_flag(fl, OUTPUT);
                     command_t_set_output_stream(output);
+                    /*restore_fd(stdout_old, STDOUT_FILENO);*/
                 } 
                 else {
                     flag_t_set_flag(fl, INPUT);
@@ -143,11 +151,19 @@ int main(int argc, const char* argv[]) {
                     pipeline[pipe_line_position++] = commands[z];
                     run_pipeline(pipeline);
                     pipe_line_position = 0;
-                }
-                if(!(get_flag(fl, INPUT) || get_flag(fl, OUTPUT))){
+                } 
+                else {
+
                     command_t_invoke(commands[z]);
+                    if(get_flag(fl, INPUT)) {
+                        restore_fd(stdin_old, STDIN_FILENO);
+                    }
+                    if(get_flag(fl, OUTPUT)) {
+                        restore_fd(stdout_old, STDOUT_FILENO);
+                    }
+                    clear_flags(fl);
                 }
-                /*else {*/
+                /*if(!(get_flag(fl, INPUT) || get_flag(fl, OUTPUT))){*/
                 /*}*/
 
             } 
@@ -158,9 +174,9 @@ int main(int argc, const char* argv[]) {
         }
 
         if(pipe_line_position > 0){
-            if(get_flag(fl, BACKGROUND)){
-                printf("needing to put this entire pipeline into the background\n");
-            }
+            /*if(get_flag(fl, BACKGROUND)){*/
+                /*printf("needing to put this entire pipeline into the background\n");*/
+            /*}*/
             run_pipeline(pipeline);
         } else {
             command_t_invoke(commands[0]);

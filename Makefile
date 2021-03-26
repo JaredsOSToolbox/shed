@@ -1,6 +1,6 @@
 OBJS = history.o strings.o command_t.o flag_t.o
 COMPILER = clang
-CFLAGS = -Wall
+CFLAGS = -Wall -g
 OUTPUT = shed
 
 all: $(OBJS) shed.c

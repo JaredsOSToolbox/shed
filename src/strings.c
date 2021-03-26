@@ -74,9 +74,15 @@ struct command_t** parse_line(char* input) {
      * j : position of command_t in command_t** buffer
      * n : nth string allocated, not exceeding MAX_STR_COUNT
      * t : counter to the number of chevrons (< | >) that occur
+     * 
+     * x : x^th position in strings (input)
+     * y : y^th  position in strings (output)
+     *
+     * Above is a janky solution to a problem I just don't have time
+     * to make really pretty
     */
 
-    int i = 0, j = 0, n = 0;
+    int i = 0, j = 0, n = 0, x = EOF, y = EOF;
 
     while (*input != '\0' && j <= COM_SIZ && n <= MAX_STR_COUNT) {
         for (size_t k = 0; k < delim_size; ++k) {
@@ -94,11 +100,13 @@ struct command_t** parse_line(char* input) {
                         break;
                     case '>':
                         flag_t_set_flag(fl, OUTPUT);
+                        y = n;
                         command->output_stream = 1;
                         break;
                     case '<':
                         flag_t_set_flag(fl, INPUT);
                         command->input_stream = 1;
+                        x = n;
                         break;
                     case '&':
                         flag_t_set_flag(fl, BACKGROUND);
@@ -129,15 +137,21 @@ struct command_t** parse_line(char* input) {
     }
 
     if(*input == '\0' && (get_flag(fl, OUTPUT) || get_flag(fl, INPUT))){
-        if(strlen(strings[n]) == 0){
-            comm->output_stream = 0;
-        } 
-        else {
-            comm->output_stream_path = strdup(strings[n]);
-            if(strings[n-1] != NULL){
-                comm->input_stream_path = strdup(strings[n-1]);
-            }
+        if(x != EOF){ // input
+            comm->input_stream_path = strdup(strings[x]);
+            comm->input_stream = 1;
+            printf("in:  %s\n", comm->input_stream_path);
         }
+        if(y != EOF) { // output
+            comm->output_stream_path = strdup(strings[y]);
+            comm->output_stream = 1;
+            printf("out:  %s\n", comm->output_stream_path);
+        }
+        /*if(strlen(strings[n]) == 0){*/
+            /*comm->output_stream = 0;*/
+        /*} */
+        /*else {*/
+        /*}*/
     }
     if(*input == '\0' && get_flag(fl, BACKGROUND)){
         comm->background_process = true;
