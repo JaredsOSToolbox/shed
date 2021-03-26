@@ -170,6 +170,7 @@ int main(int argc, const char* argv[]) {
             }
             run_pipeline(pipeline);
         } else {
+            fprintf(stderr, "[DEBUG] Please see me Molly\n");
             command_t_invoke(commands[0], global_command);
         }
 
@@ -181,7 +182,6 @@ int main(int argc, const char* argv[]) {
         if(get_flag(fl, OUTPUT)) {
             restore_fd(stdout_old, STDOUT_FILENO);
         }
-        printf("I hope this does not appear in the file\n");
         clear_flags(fl);
     }
    

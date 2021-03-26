@@ -77,6 +77,7 @@ pid_t spawnChild(char* program, char** arg_list, int background) {
 }
 
 void command_t_invoke(struct command_t* command, struct command_t* global_context) {
+    printf("invoking invoker\n");
     int wstatus;
     pid_t child = spawnChild(command->command_path, command->arguments,
                        command->background_process);
