@@ -23,7 +23,7 @@ struct command_t {
 
 struct command_t* command_t_constructor(char*);
 void command_t_destructor(struct command_t*);
-void command_t_invoke(struct command_t*, struct command_t*);
+void command_t_invoke(struct command_t*);
 void command_t_print(struct command_t*);
 
 void command_t_set_output_stream(char*);

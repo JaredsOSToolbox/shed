@@ -17,13 +17,6 @@ const float VERSION = 1.0;
 #define MAX_FILTH 100
 #define MAX_PIPELINE_LEN 10
 
-/*
- * Global pointer that can be accessed by the signal handler
-*/
-
-struct command_t* global_command;
-
-
 void version(void) {
     printf(
         "Shed Prompt (%s) %f\n"
@@ -152,7 +145,7 @@ int main(int argc, const char* argv[]) {
                     pipe_line_position = 0;
                 }
                 if(!(get_flag(fl, INPUT) || get_flag(fl, OUTPUT))){
-                    command_t_invoke(commands[z], global_command);
+                    command_t_invoke(commands[z]);
                 }
                 /*else {*/
                 /*}*/
@@ -170,8 +163,7 @@ int main(int argc, const char* argv[]) {
             }
             run_pipeline(pipeline);
         } else {
-            fprintf(stderr, "[DEBUG] Please see me Molly\n");
-            command_t_invoke(commands[0], global_command);
+            command_t_invoke(commands[0]);
         }
 
         // reset output for both stdin and stdout

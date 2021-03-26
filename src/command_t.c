@@ -76,14 +76,10 @@ pid_t spawnChild(char* program, char** arg_list, int background) {
     } 
 }
 
-void command_t_invoke(struct command_t* command, struct command_t* global_context) {
-    printf("invoking invoker\n");
+void command_t_invoke(struct command_t* command) {
     int wstatus;
     pid_t child = spawnChild(command->command_path, command->arguments,
                        command->background_process);
-    if(command->background_process){
-        global_context = command;
-    }
     /*command_t_print(global_command);*/
     if (waitpid(child, &wstatus, (command->background_process) ? WNOHANG : WUNTRACED | WCONTINUED) == -1) {
     /*if (waitpid(child, &wstatus, WUNTRACED | WCONTINUED) == -1) {*/
