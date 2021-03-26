@@ -34,16 +34,6 @@ void version(void) {
         INSTITUTION, VERSION, AUTHOR);
 }
 
-
-/*void catch(int snum) {*/
-    /*pid_t pid;*/
-    /*int status;*/
-
-    /*pid = wait(&status);*/
-    /*printf("[1] + %d done %s\n", pid, (global_command == NULL) ? "(null)" : global_command->command_path);*/
-    /*signal(SIGCHLD, catch);*/
-/*}*/
-
 void harvester_of_sorrow(struct command_t** commands, int position,
                          struct flag_t* flags, struct history* hist) {
     /*
@@ -91,6 +81,7 @@ int main(int argc, const char* argv[]) {
     int is_stdin = 0;
 
     int stdout_old = 0;
+    int stdin_old = 0;
 
     if (argc > 1 && strcmp(argv[1], "-") == 0) {
         is_stdin = 1;
@@ -100,18 +91,17 @@ int main(int argc, const char* argv[]) {
     while (running && garbage_position < MAX_FILTH) {
         printf("shed > ");
         fflush(stdout);
+
         char* line =
-            get_line();  // CTRL-D will result in massive memory leak. smile :)
+            get_line();
+
         if (strcmp(line, "EOF") == 0) {
             harvester_of_sorrow(garbage, garbage_position, fl, history);
-            /*printf("we need to free this man!\n");*/
             return 0;
-            continue;
+        } 
+        if (is_stdin) {
+            printf("\n");
         }
-
-        /*if (is_stdin) {*/
-            /*printf("\n");*/
-        /*}*/
 
         if (strcmp(line, "!!") == 0) {
             // find prev command
@@ -125,6 +115,7 @@ int main(int argc, const char* argv[]) {
         } else {
             history_insert(history, line);
         }
+
         if (strcmp(line, "exit()") == 0) {
             break;
         }
@@ -138,12 +129,15 @@ int main(int argc, const char* argv[]) {
                 pipeline[pipe_line_position++] = commands[z];
             } 
             else if((commands[z]->output_stream || commands[z]->input_stream) && !get_flag(fl, BACKGROUND)){
-                stdout_old = dup(1);
                 char* name = commands[z+1]->stream_path;
+                stdout_old = dup(STDOUT_FILENO);
+                stdin_old = dup(STDIN_FILENO);
+
                 if(commands[z]->output_stream){
                     flag_t_set_flag(fl, OUTPUT);
                     command_t_set_output_stream(name);
-                } else {
+                } 
+                else {
                     flag_t_set_flag(fl, INPUT);
                     command_t_set_input_stream(name);
                 }
@@ -152,9 +146,10 @@ int main(int argc, const char* argv[]) {
                     pipeline[pipe_line_position++] = commands[z];
                     run_pipeline(pipeline);
                     pipe_line_position = 0;
-                } else {
-                    command_t_invoke(commands[z], global_command);
-                }
+                } 
+                /*else {*/
+                    /*command_t_invoke(commands[z], global_command);*/
+                /*}*/
 
             } 
             else if(commands[z]->background_process){
@@ -172,11 +167,15 @@ int main(int argc, const char* argv[]) {
             command_t_invoke(commands[0], global_command);
         }
 
-        // reset output
+        // reset output for both stdin and stdout
         // https://stackoverflow.com/questions/11042218/c-restore-stdout-to-terminal
-        if(get_flag(fl, INPUT) || get_flag(fl, OUTPUT)){
-            restore_stdout(stdout_old);
+        if(get_flag(fl, INPUT)) {
+            restore_fd(stdin_old, STDIN_FILENO);
         }
+        if(get_flag(fl, OUTPUT)) {
+            restore_fd(stdout_old, STDOUT_FILENO);
+        }
+
         clear_flags(fl);
     }
    
@@ -187,8 +186,6 @@ int main(int argc, const char* argv[]) {
      * but it seems to be fixed when doing a garbage collection at the very end
      * why this works, i have no idea. I truly don't.
      */
-
-
 
     harvester_of_sorrow(garbage, garbage_position, fl, history);
 

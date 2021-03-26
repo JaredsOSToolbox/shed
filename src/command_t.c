@@ -119,20 +119,29 @@ void command_t_set_output_stream(char* path) {
     }
     int fdout = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0600);
     dup2(fdout, STDOUT_FILENO);
+    /*printf("[DEBUG] This is a test for STDOUT processing\n");*/
     close(fdout);
 }
 
-void restore_stdout(int stdout_fd){
-    dup2(stdout_fd, 1);
-    close(stdout_fd);
+void restore_fd(int current_fd, int destination_fd) {
+    /*
+     * Restore opened file descriptor to both st
+    */
+
+    dup2(current_fd, destination_fd);
+    close(current_fd);
 }
 
 
 void run_pipeline(struct command_t** container) {
     int fd[2];
     pid_t pid;
-    int fdd = 0;
+    int fdd = STDIN_FILENO;
     int z = 0;
+
+    printf("saving the old stdout and stdin\n");
+    int stdout_old = dup(STDOUT_FILENO);
+    int stdin_old = dup(STDIN_FILENO);
 
     while(container[z] != NULL) {
         pipe(fd);
@@ -140,11 +149,9 @@ void run_pipeline(struct command_t** container) {
             perror("fork");
             exit(1);
         } else if(pid == 0){
-            /*if(container[z]->background_process)*/
-            /*setsid();*/
-            dup2(fdd, 0);
+            dup2(fdd, STDIN_FILENO);
             if(container[z+1] != NULL){
-                dup2(fd[1], 1);
+                dup2(fd[1], STDOUT_FILENO);
             }
             close(fd[0]);
             execvp(container[z]->command_path, container[z]->arguments);
@@ -157,4 +164,7 @@ void run_pipeline(struct command_t** container) {
         }
         ++z;
     }
+
+    restore_fd(stdout_old, STDOUT_FILENO);
+    restore_fd(stdin_old, STDIN_FILENO);
 }

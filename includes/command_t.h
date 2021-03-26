@@ -29,5 +29,7 @@ void command_t_set_output_stream(char*);
 void command_t_set_input_stream(char*);
 void command_t_set_background_process(struct command_t*); // cat prog.c &
 void command_t_set_pipe_stream(struct command_t*, pid_t*);
-void restore_stdout(int);
+
+//void restore_stdout(int);
+void restore_fd(int, int);
 void run_pipeline(struct command_t**);

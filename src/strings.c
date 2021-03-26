@@ -12,7 +12,6 @@ char* get_line() {
     /*
      * We want to grab the line from stdin
      */
-
     char* line = NULL;
     size_t len = 0;
     ssize_t read;
@@ -33,11 +32,7 @@ char* get_line() {
     if (strlen(line) == 0) {
         // EOF
         free(retline);
-        // pass in garbage bin struct that has pointers to all allocated blocks
-        // of memory and automatically free them in this chunk here?
         return "EOF";
-        /*exit(0);*/
-        /*return NULL;*/
     }
 
     strcpy(retline, line);

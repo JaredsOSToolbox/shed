@@ -21,7 +21,7 @@ strings.o: src/strings.c includes/strings.h
 test: all
 	#echo -e "echo --version\n" | ./shed
 	echo -e "uname -a" | ./shed -
-	#echo -e "uname -a | grep -o Linux | wc -l > example" | ./shed -
+	echo -e "uname -a | grep -o Linux | wc -l > example" | ./shed -
 	#echo -e "uname -a | grep -o Linux | sort < example" | ./shed -
 	#echo -e "echo hello | sed" | ./shed -
 	#echo -e "echo hello | sed &" | ./shed -
