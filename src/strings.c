@@ -94,11 +94,9 @@ struct command_t** parse_line(char* input) {
                         break;
                     case '>':
                         flag_t_set_flag(fl, OUTPUT);
-                        printf("output redirection\n");
                         command->output_stream = 1;
                         break;
                     case '<':
-                        printf("input redirection\n");
                         flag_t_set_flag(fl, INPUT);
                         command->input_stream = 1;
                         break;
@@ -135,13 +133,11 @@ struct command_t** parse_line(char* input) {
             comm->output_stream = 0;
         } 
         else {
-            comm->stream_path = strdup(strings[n]);
+            comm->output_stream_path = strdup(strings[n]);
+            if(strings[n-1] != NULL){
+                comm->input_stream_path = strdup(strings[n-1]);
+            }
         }
-        /*if(strings[n-1] != NULL){*/
-
-        /*}*/
-        printf("current input: %s\n", strings[n-1]);
-        printf("current output: %s\n", strings[n]);
     }
     if(*input == '\0' && get_flag(fl, BACKGROUND)){
         comm->background_process = true;

@@ -18,7 +18,7 @@ struct command_t* command_t_constructor(char* line) {
 
     char** command_args = malloc((MAX_WORDS + 1) * sizeof(char*));
 
-    /*char* stream_path = (char*)malloc(BUFSIZ * sizeof(char));*/
+    /*char* output_stream_path = (char*)malloc(BUFSIZ * sizeof(char));*/
 
     int i = 0;
 

@@ -123,24 +123,27 @@ int main(int argc, const char* argv[]) {
         struct command_t** commands = parse_line(copy);
         int z = 0;
         while(commands[z] != NULL && garbage_position < MAX_FILTH && pipe_line_position < MAX_PIPELINE_LEN) {
-            command_t_print(commands[z]);
             if(commands[z]->pipe_stream == 1 && (z + 1 < COM_SIZ)) {
                 // add to pipeline for processing
                 garbage[garbage_position++] = commands[z];
                 pipeline[pipe_line_position++] = commands[z];
             } 
             else if((commands[z]->output_stream || commands[z]->input_stream) && !get_flag(fl, BACKGROUND)){
-                char* name = commands[z+1]->stream_path;
+                char* output = commands[z+1]->output_stream_path;
+                char* input = commands[z+1]->input_stream_path;
+
                 stdout_old = dup(STDOUT_FILENO);
                 stdin_old = dup(STDIN_FILENO);
 
-                if(commands[z]->output_stream){
+                if(commands[z]->output_stream && output != NULL){
                     flag_t_set_flag(fl, OUTPUT);
-                    command_t_set_output_stream(name);
+                    command_t_set_output_stream(output);
                 } 
                 else {
                     flag_t_set_flag(fl, INPUT);
-                    command_t_set_input_stream(name);
+                    if(input != NULL){
+                        command_t_set_input_stream(input);
+                    }
                 }
                 
                 if(pipe_line_position > 0 && !get_flag(fl, INPUT)) {
@@ -178,7 +181,7 @@ int main(int argc, const char* argv[]) {
         if(get_flag(fl, OUTPUT)) {
             restore_fd(stdout_old, STDOUT_FILENO);
         }
-
+        printf("I hope this does not appear in the file\n");
         clear_flags(fl);
     }
    

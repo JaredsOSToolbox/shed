@@ -14,7 +14,8 @@ struct command_t {
   int input_stream;  // is command reading from another command? (have either of
                      // hese been modified)
   int output_stream;  // is command outputting to stdout or another file stream
-  char* stream_path; // either input or output
+  char* output_stream_path; // strictly output
+  char* input_stream_path; // strictly input
   
   int pipe_stream; // using pipe?
   int background_process; // using & ?
