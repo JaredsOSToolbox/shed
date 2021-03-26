@@ -123,6 +123,7 @@ int main(int argc, const char* argv[]) {
         struct command_t** commands = parse_line(copy);
         int z = 0;
         while(commands[z] != NULL && garbage_position < MAX_FILTH && pipe_line_position < MAX_PIPELINE_LEN) {
+            command_t_print(commands[z]);
             if(commands[z]->pipe_stream == 1 && (z + 1 < COM_SIZ)) {
                 // add to pipeline for processing
                 garbage[garbage_position++] = commands[z];
@@ -146,9 +147,11 @@ int main(int argc, const char* argv[]) {
                     pipeline[pipe_line_position++] = commands[z];
                     run_pipeline(pipeline);
                     pipe_line_position = 0;
-                } 
+                }
+                if(!(get_flag(fl, INPUT) || get_flag(fl, OUTPUT))){
+                    command_t_invoke(commands[z], global_command);
+                }
                 /*else {*/
-                    /*command_t_invoke(commands[z], global_command);*/
                 /*}*/
 
             } 
