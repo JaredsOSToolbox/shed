@@ -1,13 +1,14 @@
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <signal.h>
 
 #include "includes/command_t.h"
 #include "includes/flag_t.h"
 #include "includes/history.h"
+#include "includes/pipe_t.h"
 #include "includes/strings.h"
 
 const char* INSTITUTION = "California State University Fullerton";
@@ -15,7 +16,6 @@ const char* AUTHOR = "Jared Dyreson";
 const float VERSION = 1;
 
 #define MAX_FILTH 100
-#define MAX_PIPELINE_LEN 10
 
 void version(void) {
     printf(
@@ -72,6 +72,8 @@ int main(int argc, const char* argv[]) {
     struct command_t** pipeline =
         (struct command_t**)malloc(MAX_PIPELINE_LEN * sizeof(struct command_t*));
 
+    struct pipe_t _pipe;
+
     struct flag_t* fl = flag_t_constructor();
 
 
@@ -125,8 +127,8 @@ int main(int argc, const char* argv[]) {
         int z = 0;
         char* output;
         char* input;
+
         while(commands[z] != NULL && garbage_position < MAX_FILTH && pipe_line_position < MAX_PIPELINE_LEN) {
-            command_t_print(commands[z]);
             if(commands[z]->pipe_stream == 1 && (z + 1 < COM_SIZ)) {
                 // add to pipeline for processing
                 garbage[garbage_position++] = commands[z];
@@ -165,13 +167,13 @@ int main(int argc, const char* argv[]) {
             /*
              * Invoke a series of commands in a pipe
             */
-            printf("[DEBUG] Running pipeline\n");
+            /*printf("[DEBUG] Running pipeline\n");*/
             run_pipeline(pipeline);
         } else {
             /*
              * Invoke solitary command
             */
-            printf("[DEBUG] Running solo command\n");
+            /*printf("[DEBUG] Running solo command\n");*/
             command_t_invoke(commands[0]);
         }
 
