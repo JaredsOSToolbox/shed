@@ -1,4 +1,5 @@
-OBJS = history.o strings.o command_t.o flag_t.o
+OBJS = command_t.o flag_t.o  pipe_t.o  strings.o  history.o 
+
 COMPILER = clang
 CFLAGS = -Wall -g
 OUTPUT = shed
@@ -9,11 +10,14 @@ all: $(OBJS) shed.c
 command_t.o: src/command_t.c includes/command_t.h
 	$(COMPILER) $(CFLAGS) -c src/command_t.c
 
+flag_t.o: src/flag_t.c includes/flag_t.h
+	$(COMPILER) $(CFLAGS) -c src/flag_t.c
+
 history.o: src/history.c includes/history.h
 	$(COMPILER) $(CFLAGS) -c src/history.c
 
-flag_t.o: src/flag_t.c includes/flag_t.h
-	$(COMPILER) $(CFLAGS) -c src/flag_t.c
+pipe_t.o: src/pipe_t.c includes/pipe_t.h
+	$(COMPILER) $(CFLAGS) -c src/pipe_t.c
 
 strings.o: src/strings.c includes/strings.h
 	$(COMPILER) $(CFLAGS) -c src/strings.c
