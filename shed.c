@@ -12,14 +12,14 @@
 
 const char* INSTITUTION = "California State University Fullerton";
 const char* AUTHOR = "Jared Dyreson";
-const float VERSION = 1.0;
+const float VERSION = 1;
 
 #define MAX_FILTH 100
 #define MAX_PIPELINE_LEN 10
 
 void version(void) {
     printf(
-        "Shed Prompt (%s) %f\n"
+        "Shed Prompt (%s) %.2f\n"
         "Copyright (C) 2021 Comrade Software Foundation, Inc.\n"
         "MIT License\n"
         "This is free software, and provided as is without warranty\n"
@@ -58,6 +58,11 @@ void harvester_of_sorrow(struct command_t** commands, int position,
 }
 
 int main(int argc, const char* argv[]) {
+    /*if (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0) {*/
+        /*version();*/
+        /*return 0;*/
+    /*}*/
+
     int running = 1;
 
     struct history* history = history_constructor();
@@ -81,6 +86,7 @@ int main(int argc, const char* argv[]) {
     if (argc > 1 && strcmp(argv[1], "-") == 0) {
         is_stdin = 1;
     }
+
 
     /*signal(SIGCHLD, catch);*/
     while (running && garbage_position < MAX_FILTH) {
@@ -127,6 +133,7 @@ int main(int argc, const char* argv[]) {
                 pipeline[pipe_line_position++] = commands[z];
             } 
             else if((commands[z]->output_stream || commands[z]->input_stream) && !get_flag(fl, BACKGROUND)){
+                // FIXME : this code is terrible but works, please beautify me
                 if(commands[z+1] != NULL){
                     input = commands[z+1]->input_stream_path;
                     output = commands[z+1]->output_stream_path;
@@ -137,8 +144,8 @@ int main(int argc, const char* argv[]) {
 
                 if(commands[z]->output_stream && output != NULL){
                     flag_t_set_flag(fl, OUTPUT);
+                    /*printf("sending this to the output\n");*/
                     command_t_set_output_stream(output);
-                    /*restore_fd(stdout_old, STDOUT_FILENO);*/
                 } 
                 else {
                     flag_t_set_flag(fl, INPUT);
@@ -147,25 +154,6 @@ int main(int argc, const char* argv[]) {
                     }
                 }
                 
-                if(pipe_line_position > 0 && !get_flag(fl, INPUT)) {
-                    pipeline[pipe_line_position++] = commands[z];
-                    run_pipeline(pipeline);
-                    pipe_line_position = 0;
-                } 
-                else {
-
-                    command_t_invoke(commands[z]);
-                    if(get_flag(fl, INPUT)) {
-                        restore_fd(stdin_old, STDIN_FILENO);
-                    }
-                    if(get_flag(fl, OUTPUT)) {
-                        restore_fd(stdout_old, STDOUT_FILENO);
-                    }
-                    clear_flags(fl);
-                }
-                /*if(!(get_flag(fl, INPUT) || get_flag(fl, OUTPUT))){*/
-                /*}*/
-
             } 
             else if(commands[z]->background_process){
                 flag_t_set_flag(fl, BACKGROUND);
@@ -174,22 +162,31 @@ int main(int argc, const char* argv[]) {
         }
 
         if(pipe_line_position > 0){
-            /*if(get_flag(fl, BACKGROUND)){*/
-                /*printf("needing to put this entire pipeline into the background\n");*/
-            /*}*/
+            /*
+             * Invoke a series of commands in a pipe
+            */
+            printf("[DEBUG] Running pipeline\n");
             run_pipeline(pipeline);
         } else {
+            /*
+             * Invoke solitary command
+            */
+            printf("[DEBUG] Running solo command\n");
             command_t_invoke(commands[0]);
         }
 
-        // reset output for both stdin and stdout
-        // https://stackoverflow.com/questions/11042218/c-restore-stdout-to-terminal
-        if(get_flag(fl, INPUT)) {
+        /*
+         * Reset output for both STDIN and STDOUT
+         * SRC: https://stackoverflow.com/questions/11042218/c-restore-stdout-to-terminal
+         * These cannot be reset unless preset by the above logic
+        */
+
+        if(get_flag(fl, INPUT)){
             restore_fd(stdin_old, STDIN_FILENO);
-        }
-        if(get_flag(fl, OUTPUT)) {
+        } if(get_flag(fl, OUTPUT)){
             restore_fd(stdout_old, STDOUT_FILENO);
         }
+
         clear_flags(fl);
     }
    
