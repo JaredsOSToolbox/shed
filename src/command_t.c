@@ -1,4 +1,5 @@
 #include "../includes/command_t.h"
+#include "../includes/flag_t.h"
 
 #include <signal.h>
 #include <errno.h>
@@ -98,6 +99,7 @@ void command_t_print(struct command_t* command) {
 }
 
 void command_t_set_input_stream(char* path) {
+    printf("calling %s\n", __func__);
     int fd = open(path, O_RDONLY);
     if (fd == EOF) {
         fprintf(stderr,
@@ -135,20 +137,26 @@ void run_pipeline(struct command_t** container) {
     pid_t pid;
     int fdd = STDIN_FILENO;
     int z = 0;
+    int stdout_old = STDOUT_FILENO;
 
-    printf("saving the old stdout and stdin\n");
-    int stdout_old = dup(STDOUT_FILENO);
-    int stdin_old = dup(STDIN_FILENO);
+    struct flag_t* fl = flag_t_constructor();
 
     while(container[z] != NULL) {
         pipe(fd);
         if((pid = fork()) == -1){
             perror("fork");
             exit(1);
-        } else if(pid == 0){
+        } else if(pid == 0) {
             dup2(fdd, STDIN_FILENO);
             if(container[z+1] != NULL){
                 dup2(fd[1], STDOUT_FILENO);
+            } else {
+
+                if(container[z]->output_stream) {
+                    stdout_old = dup(STDOUT_FILENO);
+                    flag_t_set_flag(fl, OUTPUT);
+                    command_t_set_output_stream(container[z]->output_stream_path);
+                }
             }
             close(fd[0]);
             execvp(container[z]->command_path, container[z]->arguments);
@@ -157,11 +165,13 @@ void run_pipeline(struct command_t** container) {
         else {
             wait(NULL);
             close(fd[1]);
+
             fdd = fd[0];
         }
         ++z;
+        if(get_flag(fl, OUTPUT)){
+            restore_fd(stdout_old, STDOUT_FILENO);
+        }
+        clear_flags(fl);
     }
-
-    restore_fd(stdout_old, STDOUT_FILENO);
-    restore_fd(stdin_old, STDIN_FILENO);
 }

@@ -72,7 +72,6 @@ int main(int argc, const char* argv[]) {
     struct command_t** pipeline =
         (struct command_t**)malloc(MAX_PIPELINE_LEN * sizeof(struct command_t*));
 
-    struct pipe_t _pipe;
 
     struct flag_t* fl = flag_t_constructor();
 
@@ -125,39 +124,58 @@ int main(int argc, const char* argv[]) {
         char* copy = strdup(line);
         struct command_t** commands = parse_line(copy);
         int z = 0;
-        char* output;
-        char* input;
+        char *input, *output;
+        bool has_run_input = false;
 
         while(commands[z] != NULL && garbage_position < MAX_FILTH && pipe_line_position < MAX_PIPELINE_LEN) {
+            printf("has_run_input: %s\n", (has_run_input) ? "true" : "false");
+            command_t_print(commands[z]);
             if(commands[z]->pipe_stream == 1 && (z + 1 < COM_SIZ)) {
                 // add to pipeline for processing
                 garbage[garbage_position++] = commands[z];
                 pipeline[pipe_line_position++] = commands[z];
             } 
-            else if((commands[z]->output_stream || commands[z]->input_stream) && !get_flag(fl, BACKGROUND)){
-                // FIXME : this code is terrible but works, please beautify me
+
+            if(commands[z]->output_stream && !get_flag(fl, BACKGROUND)){
+                if(has_run_input){
+                    printf("hey i just used the last command as input so I just need to redirect to output\n");
+                }
+
                 if(commands[z+1] != NULL){
-                    input = commands[z+1]->input_stream_path;
                     output = commands[z+1]->output_stream_path;
                 }
 
-                stdout_old = dup(STDOUT_FILENO);
-                stdin_old = dup(STDIN_FILENO);
+                printf("[DEBUG] %s as the output file\n", output);
 
-                if(commands[z]->output_stream && output != NULL){
-                    flag_t_set_flag(fl, OUTPUT);
-                    /*printf("sending this to the output\n");*/
-                    command_t_set_output_stream(output);
-                } 
-                else {
-                    flag_t_set_flag(fl, INPUT);
-                    if(input != NULL){
-                        command_t_set_input_stream(input);
-                    }
+                stdout_old = dup(STDOUT_FILENO);
+                flag_t_set_flag(fl, OUTPUT);
+                command_t_set_output_stream(output);
+                ++z;
+
+            }
+
+            if(commands[z]->input_stream && !get_flag(fl, BACKGROUND)){
+                printf("%s\n", commands[z]->input_stream_path);
+                command_t_print(commands[z]);
+                if(!has_run_input){
+                    printf("[MARIO] %s\n", commands[z+1]->input_stream_path);
                 }
-                
-            } 
-            else if(commands[z]->background_process){
+                if(commands[z+1] != NULL) {
+                    input = commands[z+1]->input_stream_path;
+                }
+
+                stdin_old = dup(STDIN_FILENO);
+                flag_t_set_flag(fl, INPUT);
+
+                command_t_set_input_stream(input);
+                /*if(get_flag(fl, OUTPUT)){*/
+                    /*++z;*/
+                /*}*/
+                ++z;
+                has_run_input = true;
+            }
+
+            if(commands[z]->background_process){
                 flag_t_set_flag(fl, BACKGROUND);
             }
             ++z;
@@ -167,13 +185,12 @@ int main(int argc, const char* argv[]) {
             /*
              * Invoke a series of commands in a pipe
             */
-            /*printf("[DEBUG] Running pipeline\n");*/
             run_pipeline(pipeline);
         } else {
             /*
              * Invoke solitary command
             */
-            /*printf("[DEBUG] Running solo command\n");*/
+            printf("[DEBUG] Running solo command\n");
             command_t_invoke(commands[0]);
         }
 
