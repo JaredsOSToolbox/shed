@@ -138,12 +138,10 @@ struct command_t** parse_line(char* input) {
 
     if(*input == '\0' && (get_flag(fl, OUTPUT) || get_flag(fl, INPUT))){
         if(x != EOF){ // input
-            printf("setting %s as input\n", strings[x]);
             comm->input_stream_path = strdup(strings[x]);
             comm->input_stream = 1;
         }
         if(y != EOF) { // output
-            printf("setting %s as output\n", strings[y]);
             comm->output_stream_path = strdup(strings[y]);
             comm->output_stream = 1;
         }
@@ -156,7 +154,6 @@ struct command_t** parse_line(char* input) {
     container[j++] = comm;
 
     container[j+1] = NULL;
-    printf("number of commands in this container is %d\n", j);
 
     flag_t_destructor(fl);
     return container;

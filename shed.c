@@ -125,11 +125,10 @@ int main(int argc, const char* argv[]) {
         struct command_t** commands = parse_line(copy);
         int z = 0;
         char *input, *output;
-        bool has_run_input = false;
+        bool FILLER_BOOLEAN = false;
 
         while(commands[z] != NULL && garbage_position < MAX_FILTH && pipe_line_position < MAX_PIPELINE_LEN) {
-            printf("has_run_input: %s\n", (has_run_input) ? "true" : "false");
-            command_t_print(commands[z]);
+            /*command_t_print(commands[z]);*/
             if(commands[z]->pipe_stream == 1 && (z + 1 < COM_SIZ)) {
                 // add to pipeline for processing
                 garbage[garbage_position++] = commands[z];
@@ -137,42 +136,40 @@ int main(int argc, const char* argv[]) {
             } 
 
             if(commands[z]->output_stream && !get_flag(fl, BACKGROUND)){
-                if(has_run_input){
-                    printf("hey i just used the last command as input so I just need to redirect to output\n");
-                }
 
-                if(commands[z+1] != NULL){
-                    output = commands[z+1]->output_stream_path;
-                }
+                /*if(commands[z+1] != NULL){*/
+                    /*output = commands[z+1]->output_stream_path;*/
+                /*}*/
 
-                printf("[DEBUG] %s as the output file\n", output);
+                
+                commands[(FILLER_BOOLEAN) ? z-1: z];
+                /*printf("[DEBUG] %s as the output file\n", output);*/
 
                 stdout_old = dup(STDOUT_FILENO);
                 flag_t_set_flag(fl, OUTPUT);
-                command_t_set_output_stream(output);
+                FILLER_BOOLEAN = false;
+                /*command_t_set_output_stream(output);*/
                 ++z;
 
             }
 
             if(commands[z]->input_stream && !get_flag(fl, BACKGROUND)){
-                printf("%s\n", commands[z]->input_stream_path);
-                command_t_print(commands[z]);
-                if(!has_run_input){
-                    printf("[MARIO] %s\n", commands[z+1]->input_stream_path);
-                }
+
+                // this further thickens the plot
+                // FIXME : proper command processing in src/strings.c
                 if(commands[z+1] != NULL) {
-                    input = commands[z+1]->input_stream_path;
+                    input = commands[z+1]->command_path;
                 }
 
                 stdin_old = dup(STDIN_FILENO);
                 flag_t_set_flag(fl, INPUT);
 
                 command_t_set_input_stream(input);
+                FILLER_BOOLEAN = true;
                 /*if(get_flag(fl, OUTPUT)){*/
                     /*++z;*/
                 /*}*/
                 ++z;
-                has_run_input = true;
             }
 
             if(commands[z]->background_process){
@@ -190,7 +187,7 @@ int main(int argc, const char* argv[]) {
             /*
              * Invoke solitary command
             */
-            printf("[DEBUG] Running solo command\n");
+            /*printf("[DEBUG] Running solo command\n");*/
             command_t_invoke(commands[0]);
         }
 
