@@ -99,7 +99,6 @@ void command_t_print(struct command_t* command) {
 }
 
 void command_t_set_input_stream(char* path) {
-    printf("calling %s\n", __func__);
     int fd = open(path, O_RDONLY);
     if (fd == EOF) {
         fprintf(stderr,

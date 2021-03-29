@@ -123,60 +123,60 @@ int main(int argc, const char* argv[]) {
         }
         char* copy = strdup(line);
         struct command_t** commands = parse_line(copy);
-        int z = 0;
+        struct command_t*** c_list_begin = &commands;
+        int length = 0;
         char *input, *output;
-        bool FILLER_BOOLEAN = false;
 
-        while(commands[z] != NULL && garbage_position < MAX_FILTH && pipe_line_position < MAX_PIPELINE_LEN) {
-            /*command_t_print(commands[z]);*/
-            if(commands[z]->pipe_stream == 1 && (z + 1 < COM_SIZ)) {
+        while(*c_list_begin++ != NULL){
+            ++length;
+        }
+
+        for(int i = 0; i < length-1; ++i) {
+            if(commands[i]->pipe_stream){
                 // add to pipeline for processing
-                garbage[garbage_position++] = commands[z];
-                pipeline[pipe_line_position++] = commands[z];
-            } 
-
-            if(commands[z]->output_stream && !get_flag(fl, BACKGROUND)){
-
-                /*if(commands[z+1] != NULL){*/
-                    /*output = commands[z+1]->output_stream_path;*/
-                /*}*/
-
-                
-                commands[(FILLER_BOOLEAN) ? z-1: z];
-                /*printf("[DEBUG] %s as the output file\n", output);*/
-
-                stdout_old = dup(STDOUT_FILENO);
-                flag_t_set_flag(fl, OUTPUT);
-                FILLER_BOOLEAN = false;
-                /*command_t_set_output_stream(output);*/
-                ++z;
-
+                garbage[garbage_position++] = commands[i];
+                pipeline[pipe_line_position++] = commands[i];
             }
 
-            if(commands[z]->input_stream && !get_flag(fl, BACKGROUND)){
+            if(commands[i]->output_stream && !get_flag(fl, BACKGROUND)){
+                if(i+1 <= length) {
+                    output = commands[i+1]->command_path;
+                }
+                stdout_old = dup(STDOUT_FILENO);
+                flag_t_set_flag(fl, OUTPUT);
+                command_t_set_output_stream(output);
+            }
+
+            if(commands[i]->input_stream && !get_flag(fl, BACKGROUND)){
 
                 // this further thickens the plot
                 // FIXME : proper command processing in src/strings.c
-                if(commands[z+1] != NULL) {
-                    input = commands[z+1]->command_path;
+                /*if(i+1 <= length){*/
+                    /*input = commands[i+1]->command_path;*/
+                /*}*/
+                input = commands[i+1]->command_path;
+                if(commands[i]->output_stream){
+                    output = commands[i]->output_stream_path;
                 }
+
 
                 stdin_old = dup(STDIN_FILENO);
                 flag_t_set_flag(fl, INPUT);
-
                 command_t_set_input_stream(input);
-                FILLER_BOOLEAN = true;
-                /*if(get_flag(fl, OUTPUT)){*/
-                    /*++z;*/
-                /*}*/
-                ++z;
+
+                if(output != NULL){
+                    stdout_old = dup(STDOUT_FILENO);
+                    flag_t_set_flag(fl, OUTPUT);
+                    command_t_set_output_stream(output);
+                }
             }
 
-            if(commands[z]->background_process){
+            if(commands[i]->background_process){
                 flag_t_set_flag(fl, BACKGROUND);
             }
-            ++z;
+
         }
+
 
         if(pipe_line_position > 0){
             /*
