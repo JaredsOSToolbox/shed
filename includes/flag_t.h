@@ -6,13 +6,12 @@
 
 #define SIZE 4
 
-
 struct flag_t {
-    bool* container;
-    int size;
+  bool* container;
+  int size;
 };
 
-struct flag_t *flag_t_constructor();
+struct flag_t* flag_t_constructor();
 
 void flag_t_destructor(struct flag_t*);
 
